@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sheepshead Scorekeeper</title>
+  <style>
+    :root {
+      --bg: #12181b;
+      --card-bg: #1e262c;
+      --accent: #00e676;
+      --partner-color: #29b6f6;
+      --sit-color: #78909c;
+      --danger: #ff5252;
+      --text: #eceff1;
+      --subtext: #90a4ae;
+      --border: #37474f;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+    details {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    summary {
+      padding: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #1a2127;
+      color: var(--subtext);
+      user-select: none;
+    }
+    summary:hover {
+      color: #fff;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--subtext);
+      margin-bottom: 4px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      background: #2a353d;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+    }
+    button {
+      background: var(--accent);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      margin-top: 12px;
+      border-radius: 4px;
+      transition: opacity 0.2s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    button.btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    /* Standings Grid */
+    .totals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      text-align: center;
+    }
+    @media (min-width: 700px) {
+      .totals-grid {
+        grid-template-columns: repeat(var(--player-count, 6), minmax(0, 1fr));
+      }
+    }
+    .total-card {
+      background: #2a353d;
+      padding: 10px 4px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .total-card:hover {
+      border-color: #546e7a;
+    }
+    .total-card.picker {
+      border-color: var(--accent) !important;
+      background: rgba(0, 230, 118, 0.15);
+    }
+    .total-card.partner {
+      border-color: var(--partner-color) !important;
+      background: rgba(41, 182, 246, 0.15);
+    }
+    .total-card.sat {
+      border-color: var(--sit-color) !important;
+      background: rgba(120, 144, 156, 0.2);
+      opacity: 0.6;
+    }
+    .role-badge {
+      font-size: 0.65rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      padding: 2px 4px;
+      border-radius: 3px;
+      margin-bottom: 2px;
+      display: inline-block;
+    }
+    .badge-picker { background: var(--accent); color: #000; }
+    .badge-partner { background: var(--partner-color); color: #000; }
+    .badge-sat { background: var(--sit-color); color: #fff; }
+
+    .total-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--subtext);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .total-score {
+      font-size: 1.15rem;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+    .pos { color: var(--accent); }
+    .neg { color: var(--danger); }
+
+    /* Score Table */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+    }
+    th, td {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--subtext);
+      font-size: 0.85rem;
+      background: #1a2127;
+    }
+    .status-ok { color: var(--accent); font-weight: bold; }
+    .status-err { color: var(--danger); font-weight: bold; }
+    .instruction-text {
+      font-size: 0.8rem;
+      color: var(--subtext);
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Sheepshead Scorekeeper</h1>
+
+  <!-- Collapsible Setup Section -->
+  <details id="setupDetails">
+    <summary>⚙️ Game Setup & Player Names (Tap to Open/Close)</summary>
+    <div style="padding: 16px;">
+      <div class="grid">
+        <div>
+          <label>Game Mode</label>
+          <select id="gameType" onchange="changeGameMode()">
+            <option value="5">5 Players</option>
+            <option value="6" selected>6 Players</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid" style="margin-top: 12px;" id="playerNameInputs"></div>
+      <button class="btn-danger" style="margin-top: 16px;" onclick="resetGame()">Reset Game & Clear Scores</button>
+    </div>
+  </details>
+
+  <!-- Interactive Current Standings Card -->
+  <div class="card">
+    <label style="font-weight: bold;">Current Standings</label>
+    <div class="instruction-text">
+      Tap player cards to assign roles: <b>1st tap = Picker</b> | <b>2nd tap = Partner</b> | <b>3rd tap = Sat Out</b>
+    </div>
+    <div class="totals-grid" id="totalsGrid"></div>
+  </div>
+
+  <!-- Entry Form Card -->
+  <div class="card">
+    <label style="margin-bottom: 10px; font-weight: bold;">Record Hand Outcome</label>
+    <div class="grid">
+      <div>
+        <label>Hand Outcome</label>
+        <select id="outcomeSelect">
+          <option value="win">Win (+2 / +1)</option>
+          <option value="schneider">Schneider (+4 / +2)</option>
+          <option value="schwarz">No Tricks / Schwarz (+6 / +3)</option>
+          <option value="loss">Loss - Double Bump (-4 / -2)</option>
+          <option value="schneider-loss">Loss - Schneidered (-8 / -4)</option>
+          <option value="schwarz-loss">Loss - No Tricks Taken (-12 / -6)</option>
+        </select>
+      </div>
+      <div>
+        <label>Multipliers</label>
+        <select id="multiplierSelect">
+          <option value="1">1x (Standard)</option>
+          <option value="2">2x (Crack / Doubler)</option>
+          <option value="4">4x (Re-Crack / Blitz)</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="submitPresetHand()">Submit Hand</button>
+  </div>
+
+  <!-- Score History Table -->
+  <div class="card">
+    <label style="margin-bottom: 8px;">Hand History & Zero-Sum Audit</label>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr id="tableHeader"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = "sheepshead_scorekeeper_data";
+
+  let state = {
+    gameType: 6,
+    players: ["", "", "", "", "", ""],
+    roles: { picker: null, partner: null, sat: null },
+    history: []
+  };
+
+  function loadState() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        state = { ...state, ...parsed };
+      } catch (e) {
+        console.error("Could not parse saved game state", e);
+      }
+    }
+    document.getElementById("gameType").value = state.gameType;
+
+    // Default sat out to last player if starting clean in 6-player mode
+    if (state.gameType === 6 && state.roles.sat === null) {
+      state.roles.sat = 5;
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function initGame() {
+    loadState();
+    renderNameInputs();
+    updateStandings();
+  }
+
+  function changeGameMode() {
+    state.gameType = parseInt(document.getElementById("gameType").value);
+    resetRoles();
+    renderNameInputs();
+    saveState();
+    updateStandings();
+  }
+
+  function resetRoles() {
+    const count = state.gameType;
+    let nextSat = null;
+
+    // If transitioning from previous round, rotate sitting player clockwise
+    if (count === 6) {
+      if (state.roles.sat !== null) {
+        nextSat = (state.roles.sat + 1) % 6;
+      } else {
+        nextSat = 5; // Default to last player initially
+      }
+    }
+
+    state.roles = { picker: null, partner: null, sat: nextSat };
+  }
+
+  function renderNameInputs() {
+    const count = state.gameType;
+    const container = document.getElementById("playerNameInputs");
+    container.innerHTML = "";
+
+    for (let i = 0; i < count; i++) {
+      const div = document.createElement("div");
+      const val = state.players[i] || "";
+      div.innerHTML = `
+        <label>Player ${i + 1}</label>
+        <input 
+          type="text" 
+          placeholder="Player ${i + 1}" 
+          value="${val}" 
+          onchange="updatePlayerName(${i}, this.value)" 
+        />
+      `;
+      container.appendChild(div);
+    }
+  }
+
+  function updatePlayerName(index, name) {
+    state.players[index] = name;
+    saveState();
+    updateStandings();
+  }
+
+  function handleCardTap(index) {
+    const count = state.gameType;
+
+    if (state.roles.picker === index) {
+      state.roles.picker = null;
+      if (state.roles.partner !== null) state.roles.partner = null;
+      state.roles.partner = index;
+    } else if (state.roles.partner === index) {
+      state.roles.partner = null;
+      if (count === 6) {
+        if (state.roles.sat !== null) state.roles.sat = null;
+        state.roles.sat = index;
+      }
+    } else if (state.roles.sat === index) {
+      state.roles.sat = null;
+    } else {
+      if (state.roles.picker === null) {
+        state.roles.picker = index;
+      } else if (state.roles.partner === null) {
+        state.roles.partner = index;
+      } else if (count === 6 && state.roles.sat === null) {
+        state.roles.sat = index;
+      }
+    }
+
+    saveState();
+    updateStandings();
+  }
+
+  function submitPresetHand() {
+    const count = state.gameType;
+    const pickerIdx = state.roles.picker;
+    const partnerIdx = state.roles.partner;
+    const satIdx = state.roles.sat;
+
+    if (pickerIdx === null) {
+      alert("Please tap a player to select a Picker!");
+      return;
+    }
+
+    if (count === 6 && satIdx === null) {
+      alert("In 6-player games, please select who Sat Out!");
+      return;
+    }
+
+    const outcome = document.getElementById("outcomeSelect").value;
+    const mult = parseInt(document.getElementById("multiplierSelect").value);
+
+    let deltas = new Array(count).fill(0);
+    let basePicker = 2, basePartner = 1, baseDef = -1;
+
+    switch (outcome) {
+      case "schneider": 
+        basePicker = 4; basePartner = 2; baseDef = -2; 
+        break;
+      case "schwarz": 
+        basePicker = 6; basePartner = 3; baseDef = -3; 
+        break;
+      case "loss": 
+        basePicker = -4; basePartner = -2; baseDef = 2; 
+        break;
+      case "schneider-loss": 
+        basePicker = -8; basePartner = -4; baseDef = 4; 
+        break;
+      case "schwarz-loss": 
+        basePicker = -12; basePartner = -6; baseDef = 6; 
+        break;
+    }
+
+    let pPts = basePicker * mult;
+    let ptPts = basePartner * mult;
+    let defPts = baseDef * mult;
+
+    if (partnerIdx === null) {
+      // Picker went alone
+      let activeDefenders = count === 6 ? 4 : 4;
+      let totalGain = (pPts + ptPts) * 3;
+      deltas[pickerIdx] = totalGain;
+      for (let i = 0; i < count; i++) {
+        if (i !== pickerIdx && i !== satIdx) {
+          deltas[i] = -totalGain / activeDefenders;
+        }
+      }
+    } else {
+      // Picker + Partner
+      deltas[pickerIdx] = pPts;
+      deltas[partnerIdx] = ptPts;
+      for (let i = 0; i < count; i++) {
+        if (i !== pickerIdx && i !== partnerIdx && i !== satIdx) {
+          deltas[i] = defPts;
+        }
+      }
+    }
+
+    state.history.push({ deltas });
+
+    // Rotate sitting player clockwise for the next hand
+    resetRoles();
+    saveState();
+    updateStandings();
+  }
+
+  function resetGame() {
+    if (confirm("Are you sure you want to clear all hand history and scores?")) {
+      state.history = [];
+      state.roles = { picker: null, partner: null, sat: state.gameType === 6 ? 5 : null };
+      saveState();
+      updateStandings();
+    }
+  }
+
+  function getDisplayName(index) {
+    return state.players[index] && state.players[index].trim() !== "" 
+      ? state.players[index] 
+      : `Player ${index + 1}`;
+  }
+
+  function updateStandings() {
+    const count = state.gameType;
+    const totals = new Array(count).fill(0);
+
+    state.history.forEach(hand => {
+      hand.deltas.forEach((d, idx) => {
+        if (idx < count) totals[idx] += d;
+      });
+    });
+
+    // Render Standings Grid
+    const totalsGrid = document.getElementById("totalsGrid");
+    totalsGrid.style.setProperty("--player-count", count);
+    totalsGrid.innerHTML = "";
+    for (let i = 0; i < count; i++) {
+      const val = totals[i];
+      const cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
+      
+      let cardClass = "";
+      let badgeHtml = "";
+
+      if (state.roles.picker === i) {
+        cardClass = "picker";
+        badgeHtml = `<div class="role-badge badge-picker">Picker</div>`;
+      } else if (state.roles.partner === i) {
+        cardClass = "partner";
+        badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
+      } else if (state.roles.sat === i) {
+        cardClass = "sat";
+        badgeHtml = `<div class="role-badge badge-sat">Sat Out</div>`;
+      }
+
+      totalsGrid.innerHTML += `
+        <div class="total-card ${cardClass}" onclick="handleCardTap(${i})">
+          ${badgeHtml}
+          <div class="total-name">${getDisplayName(i)}</div>
+          <div class="total-score ${cls}">${val > 0 ? '+' : ''}${val}</div>
+        </div>
+      `;
+    }
+
+    // Render Table Header
+    const th = document.getElementById("tableHeader");
+    th.innerHTML = "<th>#</th>";
+    for (let i = 0; i < count; i++) {
+      th.innerHTML += `<th>${getDisplayName(i)}</th>`;
+    }
+    th.innerHTML += "<th>Audit Check</th>";
+
+    // Render History Table
+    const tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+    state.history.forEach((hand, hIdx) => {
+      let tr = `<tr><td>${hIdx + 1}</td>`;
+      let sum = 0;
+      for (let i = 0; i < count; i++) {
+        let val = hand.deltas[i] || 0;
+        sum += val;
+        let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
+        tr += `<td class="${cls}">${val > 0 ? '+' : ''}${val}</td>`;
+      }
+      let sumCls = sum === 0 ? "status-ok" : "status-err";
+      tr += `<td class="${sumCls}">${sum === 0 ? '✓ 0' : '❌ ' + sum}</td></tr>`;
+      tbody.innerHTML += tr;
+    });
+  }
+
+  // Initial setup
+  initGame();
+</script>
+</body>
+</html>
