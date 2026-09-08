@@ -102,7 +102,7 @@
     /* Standings Grid */
     .totals-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       text-align: center;
     }
@@ -212,7 +212,7 @@
         </div>
       </div>
       <div class="grid" style="margin-top: 12px;" id="playerNameInputs"></div>
-      <button class="btn-danger" style="margin-top: 16px;" onclick="resetGame()">Reset Game & Clear Scores</button>
+      <button class="btn-danger" style="margin-top: 16px;" onclick="resetGame()">New Game</button>
     </div>
   </details>
 
@@ -232,9 +232,9 @@
       <div>
         <label>Hand Outcome</label>
         <select id="outcomeSelect">
-          <option value="win">Win (+2 / +1)</option>
-          <option value="schneider">Schneider (+4 / +2)</option>
-          <option value="schwarz">No Tricks / Schwarz (+6 / +3)</option>
+          <option value="win">Win - Standard (+2 / +1)</option>
+          <option value="schneider">Win - Schneider (+4 / +2)</option>
+          <option value="schwarz">Win - No Tricks / Schwarz (+6 / +3)</option>
           <option value="loss">Loss - Double Bump (-4 / -2)</option>
           <option value="schneider-loss">Loss - Schneidered (-8 / -4)</option>
           <option value="schwarz-loss">Loss - No Tricks Taken (-12 / -6)</option>
@@ -430,14 +430,14 @@
 
     if (partnerIdx === null) {
       // Picker went alone
-      let activeDefenders = count === 6 ? 4 : 4;
-      let totalGain = (pPts + ptPts) * 3;
-      deltas[pickerIdx] = totalGain;
+      let pickerTotal = 0;
       for (let i = 0; i < count; i++) {
         if (i !== pickerIdx && i !== satIdx) {
-          deltas[i] = -totalGain / activeDefenders;
+          deltas[i] = defPts;
+          pickerTotal -= defPts;
         }
       }
+      deltas[pickerIdx] = pickerTotal;
     } else {
       // Picker + Partner
       deltas[pickerIdx] = pPts;
@@ -458,9 +458,11 @@
   }
 
   function resetGame() {
-    if (confirm("Are you sure you want to clear all hand history and scores?")) {
+    if (confirm("Are you sure you want to start a new game? This will clear all player names, hand history, and scores.")) {
+      state.players = ["", "", "", "", "", ""];
       state.history = [];
       state.roles = { picker: null, partner: null, sat: state.gameType === 6 ? 5 : null };
+      renderNameInputs();
       saveState();
       updateStandings();
     }
