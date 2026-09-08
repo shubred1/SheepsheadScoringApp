@@ -217,6 +217,9 @@
       user-select: none;
       transition: all 0.2s ease;
       position: relative;
+      display: grid;
+      grid-template-rows: auto auto 18px;
+      align-items: center;
     }
     .total-card:hover {
       border-color: #546e7a;
@@ -240,8 +243,11 @@
       text-transform: uppercase;
       padding: 2px 4px;
       border-radius: 3px;
-      margin-bottom: 2px;
       display: inline-block;
+    }
+    .role-badge-slot {
+      min-height: 18px;
+      margin-top: 4px;
     }
     .badge-picker { background: var(--accent); color: #000; }
     .badge-partner { background: var(--partner-color); color: #000; }
@@ -960,9 +966,9 @@
 
       totalsGrid.innerHTML += `
         <div class="total-card ${cardClass}" onclick="handleCardTap(${i})">
-          ${badgeHtml}
           <div class="total-name">${getDisplayName(i)}</div>
           <div class="total-score ${cls}">${val > 0 ? '+' : ''}${val}</div>
+          <div class="role-badge-slot">${badgeHtml}</div>
         </div>
       `;
     }
