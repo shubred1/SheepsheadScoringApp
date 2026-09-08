@@ -245,7 +245,8 @@
     }
     .badge-picker { background: var(--accent); color: #000; }
     .badge-partner { background: var(--partner-color); color: #000; }
-    .badge-sat { background: var(--sit-color); color: #fff; }
+    .badge-sat { background: #ffeb3b; color: #000; }
+    .badge-sitting { background: #ff9800; color: #000; }
 
     .total-name {
       font-size: 0.85rem;
@@ -846,7 +847,9 @@
         badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
       } else if (isSatOut(i)) {
         cardClass = "sat";
-        badgeHtml = `<div class="role-badge badge-sat">Sat Out</div>`;
+        badgeHtml = isFixedSat(i)
+          ? `<div class="role-badge badge-sitting">Sitting</div>`
+          : `<div class="role-badge badge-sat">Sat Out</div>`;
       }
 
       totalsGrid.innerHTML += `
