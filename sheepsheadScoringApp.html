@@ -572,11 +572,10 @@
       state.roles.partner = null;
       if (sittingCount > 0) {
         const sats = satIndexes().filter(satIndex => satIndex !== index);
-        if (sats.length >= sittingCount) {
-          sats.shift();
+        if (sats.length < sittingCount) {
+          sats.push(index);
+          storeSatIndexes(sats);
         }
-        sats.push(index);
-        storeSatIndexes(sats);
       }
     } else if (isSatOut(index)) {
       storeSatIndexes(satIndexes().filter(satIndex => satIndex !== index));
