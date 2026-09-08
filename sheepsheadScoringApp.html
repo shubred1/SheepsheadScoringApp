@@ -121,6 +121,10 @@
     button:hover {
       opacity: 0.9;
     }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
     button.btn-danger {
       background: var(--danger);
       color: #fff;
@@ -311,7 +315,7 @@
         </select>
       </div>
     </div>
-    <button onclick="submitPresetHand()">Submit Hand</button>
+    <button id="submitHandButton" onclick="submitPresetHand()" disabled>Submit Hand</button>
   </div>
 
   <!-- Score History Table -->
@@ -500,6 +504,14 @@
     updateStandings();
   }
 
+  function isHandReadyToSubmit() {
+    return state.roles.picker !== null && (state.gameType !== 6 || state.roles.sat !== null);
+  }
+
+  function updateSubmitButton() {
+    document.getElementById("submitHandButton").disabled = !isHandReadyToSubmit();
+  }
+
   function handleCardTap(index) {
     const count = state.gameType;
 
@@ -530,20 +542,14 @@
   }
 
   function submitPresetHand() {
+    if (!isHandReadyToSubmit()) {
+      return;
+    }
+
     const count = state.gameType;
     const pickerIdx = state.roles.picker;
     const partnerIdx = state.roles.partner;
     const satIdx = state.roles.sat;
-
-    if (pickerIdx === null) {
-      alert("Please tap a player to select a Picker!");
-      return;
-    }
-
-    if (count === 6 && satIdx === null) {
-      alert("In 6-player games, please select who Sat Out!");
-      return;
-    }
 
     const outcome = document.getElementById("outcomeSelect").value;
     const mult = parseInt(document.getElementById("multiplierSelect").value);
@@ -598,6 +604,8 @@
 
     // Rotate sitting player clockwise for the next hand
     resetRoles();
+    document.getElementById("outcomeSelect").selectedIndex = 0;
+    document.getElementById("multiplierSelect").selectedIndex = 0;
     saveState();
     updateStandings();
   }
@@ -673,6 +681,8 @@
       tr += `<td class="${sumCls}">${sum === 0 ? '✓ 0' : '❌ ' + sum}</td></tr>`;
       tbody.innerHTML += tr;
     });
+
+    updateSubmitButton();
   }
 
   // Initial setup
