@@ -282,12 +282,24 @@
       font-size: 0.85rem;
       background: #1a2127;
     }
-    .status-ok { color: var(--accent); font-weight: bold; }
-    .status-err { color: var(--danger); font-weight: bold; }
     .instruction-text {
       font-size: 0.8rem;
       color: var(--subtext);
       margin-bottom: 10px;
+    }
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .history-order-button {
+      width: auto;
+      min-width: 118px;
+      margin-top: 0;
+      padding: 8px 10px;
+      font-size: 0.85rem;
     }
   </style>
 </head>
@@ -343,7 +355,10 @@
 
   <!-- Score History Table -->
   <div class="card">
-    <label style="margin-bottom: 8px;">Hand History & Zero-Sum Audit</label>
+    <div class="history-header">
+      <label style="margin-bottom: 0;">Hand History</label>
+      <button class="btn-secondary history-order-button" type="button" onclick="toggleHistoryOrder()" id="historyOrderButton">Newest First</button>
+    </div>
     <div class="table-wrapper">
       <table>
         <thead>
@@ -386,6 +401,7 @@
     players: ["", "", "", "", "", "", ""],
     roles: { picker: null, partner: null, sat: null },
     fixedSats: [],
+    historyNewestFirst: false,
     history: []
   };
   let modalMode = null;
@@ -730,6 +746,12 @@
     document.getElementById("submitHandButton").disabled = !isHandReadyToSubmit();
   }
 
+  function toggleHistoryOrder() {
+    state.historyNewestFirst = !state.historyNewestFirst;
+    saveState();
+    updateStandings();
+  }
+
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
     if (state.handed === 3) {
@@ -911,22 +933,25 @@
     for (let i = 0; i < count; i++) {
       th.innerHTML += `<th>${getDisplayName(i)}</th>`;
     }
-    th.innerHTML += "<th>Audit Check</th>";
 
     // Render History Table
+    const historyOrderButton = document.getElementById("historyOrderButton");
+    historyOrderButton.textContent = state.historyNewestFirst ? "Oldest First" : "Newest First";
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
-    state.history.forEach((hand, hIdx) => {
-      let tr = `<tr><td>${hIdx + 1}</td>`;
-      let sum = 0;
+    const historyRows = state.history.map((hand, hIdx) => ({ hand, handNumber: hIdx + 1 }));
+    if (state.historyNewestFirst) {
+      historyRows.reverse();
+    }
+
+    historyRows.forEach(({ hand, handNumber }) => {
+      let tr = `<tr><td>${handNumber}</td>`;
       for (let i = 0; i < count; i++) {
         let val = hand.deltas[i] || 0;
-        sum += val;
         let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
         tr += `<td class="${cls}">${val > 0 ? '+' : ''}${val}</td>`;
       }
-      let sumCls = sum === 0 ? "status-ok" : "status-err";
-      tr += `<td class="${sumCls}">${sum === 0 ? '✓ 0' : '❌ ' + sum}</td></tr>`;
+      tr += "</tr>";
       tbody.innerHTML += tr;
     });
 
