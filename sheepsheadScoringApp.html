@@ -294,7 +294,13 @@
       gap: 12px;
       margin-bottom: 8px;
     }
-    .history-order-button {
+    .history-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .history-toggle-button {
       width: auto;
       min-width: 118px;
       margin-top: 0;
@@ -357,7 +363,10 @@
   <div class="card">
     <div class="history-header">
       <label style="margin-bottom: 0;">Hand History</label>
-      <button class="btn-secondary history-order-button" type="button" onclick="toggleHistoryOrder()" id="historyOrderButton">Newest First</button>
+      <div class="history-actions">
+        <button class="btn-secondary history-toggle-button" type="button" onclick="toggleHistoryScoreMode()" id="historyScoreModeButton">Show Totals</button>
+        <button class="btn-secondary history-toggle-button" type="button" onclick="toggleHistoryOrder()" id="historyOrderButton">Newest First</button>
+      </div>
     </div>
     <div class="table-wrapper">
       <table>
@@ -402,6 +411,7 @@
     roles: { picker: null, partner: null, sat: null },
     fixedSats: [],
     historyNewestFirst: false,
+    historyShowTotals: false,
     history: []
   };
   let modalMode = null;
@@ -752,6 +762,12 @@
     updateStandings();
   }
 
+  function toggleHistoryScoreMode() {
+    state.historyShowTotals = !state.historyShowTotals;
+    saveState();
+    updateStandings();
+  }
+
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
     if (state.handed === 3) {
@@ -937,17 +953,30 @@
     // Render History Table
     const historyOrderButton = document.getElementById("historyOrderButton");
     historyOrderButton.textContent = state.historyNewestFirst ? "Oldest First" : "Newest First";
+    const historyScoreModeButton = document.getElementById("historyScoreModeButton");
+    historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hand Scores" : "Show Totals";
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
-    const historyRows = state.history.map((hand, hIdx) => ({ hand, handNumber: hIdx + 1 }));
+    const runningTotals = new Array(count).fill(0);
+    const historyRows = state.history.map((hand, hIdx) => {
+      hand.deltas.forEach((delta, index) => {
+        if (index < count) runningTotals[index] += delta;
+      });
+
+      return {
+        hand,
+        handNumber: hIdx + 1,
+        totals: runningTotals.slice()
+      };
+    });
     if (state.historyNewestFirst) {
       historyRows.reverse();
     }
 
-    historyRows.forEach(({ hand, handNumber }) => {
+    historyRows.forEach(({ hand, handNumber, totals }) => {
       let tr = `<tr><td>${handNumber}</td>`;
       for (let i = 0; i < count; i++) {
-        let val = hand.deltas[i] || 0;
+        let val = state.historyShowTotals ? totals[i] : hand.deltas[i] || 0;
         let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
         tr += `<td class="${cls}">${val > 0 ? '+' : ''}${val}</td>`;
       }
