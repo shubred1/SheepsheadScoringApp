@@ -308,7 +308,7 @@
   <!-- Interactive Current Standings Card -->
   <div class="card">
     <label style="font-weight: bold;">Current Standings</label>
-    <div class="instruction-text">
+    <div class="instruction-text" id="roleInstruction">
       Tap player cards to assign roles: <b>1st tap = Picker</b> | <b>2nd tap = Partner</b> | <b>3rd tap = Sat Out</b>
     </div>
     <div class="totals-grid" id="totalsGrid"></div>
@@ -361,6 +361,8 @@
     <div id="modalGameTypeField">
       <label>Game Mode</label>
       <select id="modalGameType" onchange="handleModalGameTypeChange()">
+        <option value="3-3">3 handed - 3 players</option>
+        <option value="3-4">3 handed - 4 players</option>
         <option value="5">5 Handed - 5 players</option>
         <option value="6">5 Handed - 6 players</option>
         <option value="7">5 Handed - 7 players</option>
@@ -379,6 +381,7 @@
   const MAX_PLAYERS = 7;
 
   let state = {
+    handed: 5,
     gameType: 6,
     players: ["", "", "", "", "", "", ""],
     roles: { picker: null, partner: null, sat: null },
@@ -397,7 +400,11 @@
         console.error("Could not parse saved game state", e);
       }
     }
-    state.gameType = [5, 6, 7].includes(parseInt(state.gameType)) ? parseInt(state.gameType) : 6;
+    state.handed = [3, 5].includes(parseInt(state.handed)) ? parseInt(state.handed) : 5;
+    state.gameType = [3, 4, 5, 6, 7].includes(parseInt(state.gameType)) ? parseInt(state.gameType) : 6;
+    if (state.gameType < state.handed || state.gameType > state.handed + 2) {
+      state.handed = state.gameType <= 4 ? 3 : 5;
+    }
     state.players = Array.isArray(state.players) ? state.players : emptyPlayers();
     while (state.players.length < MAX_PLAYERS) {
       state.players.push("");
@@ -428,13 +435,26 @@
     document.getElementById("appMenu").hidden = true;
   }
 
+  function currentGameModeValue() {
+    return state.handed === 3 ? `3-${state.gameType}` : String(state.gameType);
+  }
+
+  function parseGameModeValue(value) {
+    if (value.includes("-")) {
+      const parts = value.split("-").map(part => parseInt(part));
+      return { handed: parts[0], gameType: parts[1] };
+    }
+
+    return { handed: 5, gameType: parseInt(value) };
+  }
+
   function openNewGameModal() {
     modalMode = "new";
     closeMenu();
     document.getElementById("modalTitle").textContent = "New Game";
     document.getElementById("modalSubmitButton").textContent = "Start Game";
     document.getElementById("modalGameTypeField").hidden = false;
-    document.getElementById("modalGameType").value = state.gameType;
+    document.getElementById("modalGameType").value = currentGameModeValue();
     renderModalPlayerInputs(state.gameType, emptyPlayers());
     document.getElementById("settingsModal").hidden = false;
   }
@@ -467,11 +487,11 @@
   }
 
   function sittingPlayerCount() {
-    return Math.max(0, state.gameType - 5);
+    return Math.max(0, state.gameType - state.handed);
   }
 
-  function defaultSatIndexes(count = state.gameType) {
-    const sittingCount = Math.max(0, count - 5);
+  function defaultSatIndexes(count = state.gameType, handed = state.handed) {
+    const sittingCount = Math.max(0, count - handed);
     const start = count - sittingCount;
     return Array.from({ length: sittingCount }, (_, index) => start + index);
   }
@@ -541,6 +561,9 @@
       state.roles.picker = null;
     }
     if (fixed.includes(state.roles.partner)) {
+      state.roles.partner = null;
+    }
+    if (state.handed === 3) {
       state.roles.partner = null;
     }
 
@@ -663,8 +686,8 @@
   }
 
   function handleModalGameTypeChange() {
-    const count = parseInt(document.getElementById("modalGameType").value);
-    renderModalPlayerInputs(count, getModalNames());
+    const mode = parseGameModeValue(document.getElementById("modalGameType").value);
+    renderModalPlayerInputs(mode.gameType, getModalNames());
   }
 
   function saveModal(event) {
@@ -672,7 +695,9 @@
     const names = getModalNames();
 
     if (modalMode === "new") {
-      state.gameType = parseInt(document.getElementById("modalGameType").value);
+      const mode = parseGameModeValue(document.getElementById("modalGameType").value);
+      state.handed = mode.handed;
+      state.gameType = mode.gameType;
       state.players = names;
       state.history = [];
       state.roles = { picker: null, partner: null, sat: null };
@@ -705,17 +730,35 @@
     document.getElementById("submitHandButton").disabled = !isHandReadyToSubmit();
   }
 
+  function updateRoleInstruction() {
+    const instruction = document.getElementById("roleInstruction");
+    if (state.handed === 3) {
+      instruction.innerHTML = "Tap player cards to assign roles: <b>1st tap = Picker</b>"
+        + (sittingPlayerCount() > 0 ? " | <b>2nd tap = Sat Out</b>" : "");
+    } else {
+      instruction.innerHTML = "Tap player cards to assign roles: <b>1st tap = Picker</b> | <b>2nd tap = Partner</b>"
+        + (sittingPlayerCount() > 0 ? " | <b>3rd tap = Sat Out</b>" : "");
+    }
+  }
+
   function handleCardTap(index) {
     if (isFixedSat(index)) {
       return;
     }
 
     const sittingCount = sittingPlayerCount();
+    const hasPartner = state.handed === 5;
 
     if (state.roles.picker === index) {
       state.roles.picker = null;
-      if (state.roles.partner !== null) state.roles.partner = null;
-      state.roles.partner = index;
+      if (hasPartner) {
+        if (state.roles.partner !== null) state.roles.partner = null;
+        state.roles.partner = index;
+      } else if (sittingCount > 0 && satIndexes().length < sittingCount) {
+        const sats = satIndexes();
+        sats.push(index);
+        storeSatIndexes(sats);
+      }
     } else if (state.roles.partner === index) {
       state.roles.partner = null;
       if (sittingCount > 0) {
@@ -730,7 +773,7 @@
     } else {
       if (state.roles.picker === null) {
         state.roles.picker = index;
-      } else if (state.roles.partner === null) {
+      } else if (hasPartner && state.roles.partner === null) {
         state.roles.partner = index;
       } else if (sittingCount > 0 && satIndexes().length < sittingCount) {
         const sats = satIndexes();
@@ -781,7 +824,7 @@
     let ptPts = basePartner * mult;
     let defPts = baseDef * mult;
 
-    if (partnerIdx === null) {
+    if (state.handed === 3 || partnerIdx === null) {
       // Picker went alone
       let pickerTotal = 0;
       for (let i = 0; i < count; i++) {
@@ -821,6 +864,7 @@
   function updateStandings() {
     const count = state.gameType;
     const totals = new Array(count).fill(0);
+    updateRoleInstruction();
 
     state.history.forEach(hand => {
       hand.deltas.forEach((d, idx) => {
