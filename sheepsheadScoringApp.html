@@ -954,7 +954,7 @@
     const historyOrderButton = document.getElementById("historyOrderButton");
     historyOrderButton.textContent = state.historyNewestFirst ? "Oldest First" : "Newest First";
     const historyScoreModeButton = document.getElementById("historyScoreModeButton");
-    historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hand Scores" : "Show Totals";
+    historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hands" : "Show Totals";
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
     const runningTotals = new Array(count).fill(0);
