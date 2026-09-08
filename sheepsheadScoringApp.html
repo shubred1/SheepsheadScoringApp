@@ -340,6 +340,7 @@
       <select id="modalGameType" onchange="handleModalGameTypeChange()">
         <option value="5">5 Players</option>
         <option value="6">6 Players</option>
+        <option value="7">7 Players</option>
       </select>
     </div>
     <div class="grid" style="margin-top: 12px;" id="modalPlayerNameInputs"></div>
@@ -352,10 +353,11 @@
 
 <script>
   const STORAGE_KEY = "sheepshead_scorekeeper_data";
+  const MAX_PLAYERS = 7;
 
   let state = {
     gameType: 6,
-    players: ["", "", "", "", "", ""],
+    players: ["", "", "", "", "", "", ""],
     roles: { picker: null, partner: null, sat: null },
     history: []
   };
@@ -371,15 +373,17 @@
         console.error("Could not parse saved game state", e);
       }
     }
-    state.gameType = parseInt(state.gameType) || 6;
-    state.players = Array.isArray(state.players) ? state.players : ["", "", "", "", "", ""];
-    while (state.players.length < 6) {
+    state.gameType = [5, 6, 7].includes(parseInt(state.gameType)) ? parseInt(state.gameType) : 6;
+    state.players = Array.isArray(state.players) ? state.players : emptyPlayers();
+    while (state.players.length < MAX_PLAYERS) {
       state.players.push("");
     }
+    if (!state.roles) {
+      state.roles = { picker: null, partner: null, sat: null };
+    }
 
-    // Default sat out to last player if starting clean in 6-player mode
-    if (state.gameType === 6 && state.roles.sat === null) {
-      state.roles.sat = 5;
+    if (sittingPlayerCount() > 0 && satIndexes().length < sittingPlayerCount()) {
+      state.roles.sat = defaultSatIndexes();
     }
   }
 
@@ -408,7 +412,7 @@
     document.getElementById("modalSubmitButton").textContent = "Start Game";
     document.getElementById("modalGameTypeField").hidden = false;
     document.getElementById("modalGameType").value = state.gameType;
-    renderModalPlayerInputs(state.gameType, ["", "", "", "", "", ""]);
+    renderModalPlayerInputs(state.gameType, emptyPlayers());
     document.getElementById("settingsModal").hidden = false;
   }
 
@@ -435,20 +439,64 @@
       .replace(/>/g, "&gt;");
   }
 
+  function emptyPlayers() {
+    return new Array(MAX_PLAYERS).fill("");
+  }
+
+  function sittingPlayerCount() {
+    return Math.max(0, state.gameType - 5);
+  }
+
+  function defaultSatIndexes(count = state.gameType) {
+    const sittingCount = Math.max(0, count - 5);
+    const start = count - sittingCount;
+    return Array.from({ length: sittingCount }, (_, index) => start + index);
+  }
+
+  function satIndexes() {
+    const rawSat = state.roles.sat;
+    const values = Array.isArray(rawSat) ? rawSat : rawSat === null ? [] : [rawSat];
+    return values
+      .map(index => parseInt(index))
+      .filter((index, arrayIndex, indexes) => (
+        Number.isInteger(index) &&
+        index >= 0 &&
+        index < state.gameType &&
+        indexes.indexOf(index) === arrayIndex
+      ));
+  }
+
+  function storeSatIndexes(indexes) {
+    const sittingCount = sittingPlayerCount();
+    const limited = indexes.slice(0, sittingCount);
+    if (sittingCount === 0) {
+      state.roles.sat = null;
+    } else if (sittingCount === 1) {
+      state.roles.sat = limited.length ? limited[0] : null;
+    } else {
+      state.roles.sat = limited;
+    }
+  }
+
+  function isSatOut(index) {
+    return satIndexes().includes(index);
+  }
+
   function resetRoles() {
     const count = state.gameType;
-    let nextSat = null;
+    const sittingCount = sittingPlayerCount();
+    let nextSats = [];
 
     // If transitioning from previous round, rotate sitting player clockwise
-    if (count === 6) {
-      if (state.roles.sat !== null) {
-        nextSat = (state.roles.sat + 1) % 6;
-      } else {
-        nextSat = 5; // Default to last player initially
-      }
+    if (sittingCount > 0) {
+      const currentSats = satIndexes();
+      nextSats = currentSats.length === sittingCount
+        ? currentSats.map(index => (index + 1) % count)
+        : defaultSatIndexes(count);
     }
 
-    state.roles = { picker: null, partner: null, sat: nextSat };
+    state.roles = { picker: null, partner: null, sat: null };
+    storeSatIndexes(nextSats);
   }
 
   function renderModalPlayerInputs(count, names) {
@@ -472,7 +520,7 @@
   }
 
   function getModalNames() {
-    const names = ["", "", "", "", "", ""];
+    const names = emptyPlayers();
     document.querySelectorAll(".modal-player-name").forEach((input, index) => {
       names[index] = input.value;
     });
@@ -492,7 +540,8 @@
       state.gameType = parseInt(document.getElementById("modalGameType").value);
       state.players = names;
       state.history = [];
-      state.roles = { picker: null, partner: null, sat: state.gameType === 6 ? 5 : null };
+      state.roles = { picker: null, partner: null, sat: null };
+      storeSatIndexes(defaultSatIndexes());
     } else if (modalMode === "settings") {
       for (let i = 0; i < state.gameType; i++) {
         state.players[i] = names[i];
@@ -505,7 +554,7 @@
   }
 
   function isHandReadyToSubmit() {
-    return state.roles.picker !== null && (state.gameType !== 6 || state.roles.sat !== null);
+    return state.roles.picker !== null && satIndexes().length === sittingPlayerCount();
   }
 
   function updateSubmitButton() {
@@ -513,7 +562,7 @@
   }
 
   function handleCardTap(index) {
-    const count = state.gameType;
+    const sittingCount = sittingPlayerCount();
 
     if (state.roles.picker === index) {
       state.roles.picker = null;
@@ -521,19 +570,25 @@
       state.roles.partner = index;
     } else if (state.roles.partner === index) {
       state.roles.partner = null;
-      if (count === 6) {
-        if (state.roles.sat !== null) state.roles.sat = null;
-        state.roles.sat = index;
+      if (sittingCount > 0) {
+        const sats = satIndexes().filter(satIndex => satIndex !== index);
+        if (sats.length >= sittingCount) {
+          sats.shift();
+        }
+        sats.push(index);
+        storeSatIndexes(sats);
       }
-    } else if (state.roles.sat === index) {
-      state.roles.sat = null;
+    } else if (isSatOut(index)) {
+      storeSatIndexes(satIndexes().filter(satIndex => satIndex !== index));
     } else {
       if (state.roles.picker === null) {
         state.roles.picker = index;
       } else if (state.roles.partner === null) {
         state.roles.partner = index;
-      } else if (count === 6 && state.roles.sat === null) {
-        state.roles.sat = index;
+      } else if (sittingCount > 0 && satIndexes().length < sittingCount) {
+        const sats = satIndexes();
+        sats.push(index);
+        storeSatIndexes(sats);
       }
     }
 
@@ -549,7 +604,7 @@
     const count = state.gameType;
     const pickerIdx = state.roles.picker;
     const partnerIdx = state.roles.partner;
-    const satIdx = state.roles.sat;
+    const sats = satIndexes();
 
     const outcome = document.getElementById("outcomeSelect").value;
     const mult = parseInt(document.getElementById("multiplierSelect").value);
@@ -583,7 +638,7 @@
       // Picker went alone
       let pickerTotal = 0;
       for (let i = 0; i < count; i++) {
-        if (i !== pickerIdx && i !== satIdx) {
+        if (i !== pickerIdx && !sats.includes(i)) {
           deltas[i] = defPts;
           pickerTotal -= defPts;
         }
@@ -594,7 +649,7 @@
       deltas[pickerIdx] = pPts;
       deltas[partnerIdx] = ptPts;
       for (let i = 0; i < count; i++) {
-        if (i !== pickerIdx && i !== partnerIdx && i !== satIdx) {
+        if (i !== pickerIdx && i !== partnerIdx && !sats.includes(i)) {
           deltas[i] = defPts;
         }
       }
@@ -643,7 +698,7 @@
       } else if (state.roles.partner === i) {
         cardClass = "partner";
         badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
-      } else if (state.roles.sat === i) {
+      } else if (isSatOut(i)) {
         cardClass = "sat";
         badgeHtml = `<div class="role-badge badge-sat">Sat Out</div>`;
       }
