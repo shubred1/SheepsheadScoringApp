@@ -108,6 +108,11 @@
       font-size: 0.95rem;
       box-sizing: border-box;
     }
+    input[type="checkbox"] {
+      width: auto;
+      padding: 0;
+      accent-color: var(--accent);
+    }
     button {
       background: var(--accent);
       color: #000;
@@ -172,6 +177,23 @@
     }
     .modal-actions button {
       margin-top: 0;
+    }
+    .modal-player-row {
+      display: grid;
+      gap: 8px;
+    }
+    .sit-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 0;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .sit-checkbox-label.disabled {
+      color: var(--subtext);
+      cursor: not-allowed;
+      opacity: 0.6;
     }
 
     /* Standings Grid */
@@ -359,6 +381,7 @@
     gameType: 6,
     players: ["", "", "", "", "", "", ""],
     roles: { picker: null, partner: null, sat: null },
+    fixedSats: [],
     history: []
   };
   let modalMode = null;
@@ -381,10 +404,9 @@
     if (!state.roles) {
       state.roles = { picker: null, partner: null, sat: null };
     }
+    state.fixedSats = fixedSatIndexes();
 
-    if (sittingPlayerCount() > 0 && satIndexes().length < sittingPlayerCount()) {
-      state.roles.sat = defaultSatIndexes();
-    }
+    normalizeSatRoles();
   }
 
   function saveState() {
@@ -466,6 +488,23 @@
       ));
   }
 
+  function fixedSatIndexes() {
+    const values = Array.isArray(state.fixedSats) ? state.fixedSats : [];
+    return values
+      .map(index => parseInt(index))
+      .filter((index, arrayIndex, indexes) => (
+        Number.isInteger(index) &&
+        index >= 0 &&
+        index < state.gameType &&
+        indexes.indexOf(index) === arrayIndex
+      ))
+      .slice(0, sittingPlayerCount());
+  }
+
+  function isFixedSat(index) {
+    return fixedSatIndexes().includes(index);
+  }
+
   function storeSatIndexes(indexes) {
     const sittingCount = sittingPlayerCount();
     const limited = indexes.slice(0, sittingCount);
@@ -482,29 +521,95 @@
     return satIndexes().includes(index);
   }
 
+  function nextAvailableSatIndex(index, reserved) {
+    let next = index;
+    for (let step = 0; step < state.gameType; step++) {
+      next = (next + 1) % state.gameType;
+      if (!isFixedSat(next) && !reserved.includes(next)) {
+        return next;
+      }
+    }
+    return null;
+  }
+
+  function normalizeSatRoles() {
+    const sittingCount = sittingPlayerCount();
+    const fixed = fixedSatIndexes();
+    state.fixedSats = fixed;
+    if (fixed.includes(state.roles.picker)) {
+      state.roles.picker = null;
+    }
+    if (fixed.includes(state.roles.partner)) {
+      state.roles.partner = null;
+    }
+
+    if (sittingCount === 0) {
+      storeSatIndexes([]);
+      return;
+    }
+
+    const nextSats = fixed.slice();
+    const currentFloatingSats = satIndexes().filter(index => !fixed.includes(index));
+
+    for (let i = 0; i < currentFloatingSats.length && nextSats.length < sittingCount; i++) {
+      const index = currentFloatingSats[i];
+      if (!nextSats.includes(index)) {
+        nextSats.push(index);
+      }
+    }
+
+    const defaults = defaultSatIndexes().filter(index => !fixed.includes(index));
+    for (let i = 0; i < defaults.length && nextSats.length < sittingCount; i++) {
+      if (!nextSats.includes(defaults[i])) {
+        nextSats.push(defaults[i]);
+      }
+    }
+
+    for (let i = 0; i < state.gameType && nextSats.length < sittingCount; i++) {
+      if (!fixed.includes(i) && !nextSats.includes(i)) {
+        nextSats.push(i);
+      }
+    }
+
+    storeSatIndexes(nextSats);
+  }
+
   function resetRoles() {
     const count = state.gameType;
     const sittingCount = sittingPlayerCount();
-    let nextSats = [];
+    const fixed = fixedSatIndexes();
+    let nextSats = fixed.slice();
 
     // If transitioning from previous round, rotate sitting player clockwise
-    if (sittingCount > 0) {
-      const currentSats = satIndexes();
-      nextSats = currentSats.length === sittingCount
-        ? currentSats.map(index => (index + 1) % count)
-        : defaultSatIndexes(count);
+    if (sittingCount > fixed.length) {
+      const currentSats = satIndexes().filter(index => !fixed.includes(index));
+      if (currentSats.length === sittingCount - fixed.length) {
+        currentSats.forEach(index => {
+          const next = nextAvailableSatIndex(index, nextSats);
+          if (next !== null) {
+            nextSats.push(next);
+          }
+        });
+      }
     }
 
     state.roles = { picker: null, partner: null, sat: null };
+    if (nextSats.length < sittingCount) {
+      state.roles.sat = nextSats;
+      normalizeSatRoles();
+      return;
+    }
     storeSatIndexes(nextSats);
   }
 
   function renderModalPlayerInputs(count, names) {
     const container = document.getElementById("modalPlayerNameInputs");
     container.innerHTML = "";
+    const fixed = fixedSatIndexes();
 
     for (let i = 0; i < count; i++) {
       const div = document.createElement("div");
+      div.className = "modal-player-row";
       const val = names[i] || "";
       div.innerHTML = `
         <label>Player ${i + 1}</label>
@@ -514,9 +619,22 @@
           placeholder="Player ${i + 1}" 
           value="${escapeAttribute(val)}" 
         />
+        ${modalMode === "settings" ? `
+          <label class="sit-checkbox-label">
+            <input 
+              class="modal-fixed-sat"
+              type="checkbox"
+              value="${i}"
+              onchange="updateModalSitCheckboxes()"
+              ${fixed.includes(i) ? "checked" : ""}
+            />
+            Sit indefinitely
+          </label>
+        ` : ""}
       `;
       container.appendChild(div);
     }
+    updateModalSitCheckboxes();
   }
 
   function getModalNames() {
@@ -525,6 +643,22 @@
       names[index] = input.value;
     });
     return names;
+  }
+
+  function getModalFixedSats() {
+    return Array.from(document.querySelectorAll(".modal-fixed-sat:checked"))
+      .map(input => parseInt(input.value));
+  }
+
+  function updateModalSitCheckboxes() {
+    const checkboxes = Array.from(document.querySelectorAll(".modal-fixed-sat"));
+    const maxSitting = sittingPlayerCount();
+    const checkedCount = checkboxes.filter(checkbox => checkbox.checked).length;
+
+    checkboxes.forEach(checkbox => {
+      checkbox.disabled = !checkbox.checked && checkedCount >= maxSitting;
+      checkbox.closest(".sit-checkbox-label").classList.toggle("disabled", checkbox.disabled);
+    });
   }
 
   function handleModalGameTypeChange() {
@@ -541,11 +675,20 @@
       state.players = names;
       state.history = [];
       state.roles = { picker: null, partner: null, sat: null };
+      state.fixedSats = [];
       storeSatIndexes(defaultSatIndexes());
     } else if (modalMode === "settings") {
       for (let i = 0; i < state.gameType; i++) {
         state.players[i] = names[i];
       }
+      state.fixedSats = getModalFixedSats();
+      if (isFixedSat(state.roles.picker)) {
+        state.roles.picker = null;
+      }
+      if (isFixedSat(state.roles.partner)) {
+        state.roles.partner = null;
+      }
+      normalizeSatRoles();
     }
 
     closeModal();
@@ -562,6 +705,10 @@
   }
 
   function handleCardTap(index) {
+    if (isFixedSat(index)) {
+      return;
+    }
+
     const sittingCount = sittingPlayerCount();
 
     if (state.roles.picker === index) {
