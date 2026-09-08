@@ -277,6 +277,26 @@
       padding: 8px;
       border-bottom: 1px solid var(--border);
     }
+    td.history-picker-cell,
+    td.history-partner-cell {
+      position: relative;
+      font-weight: bold;
+    }
+    td.history-picker-cell::after,
+    td.history-partner-cell::after {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      pointer-events: none;
+    }
+    td.history-picker-cell::after {
+      border: 2px solid var(--accent);
+      border-radius: 999px;
+    }
+    td.history-partner-cell::after {
+      border: 2px solid var(--partner-color);
+      border-radius: 4px;
+    }
     th {
       color: var(--subtext);
       font-size: 0.85rem;
@@ -883,7 +903,11 @@
       }
     }
 
-    state.history.push({ deltas });
+    state.history.push({
+      deltas,
+      picker: pickerIdx,
+      partner: state.handed === 5 && partnerIdx !== null ? partnerIdx : null
+    });
 
     // Rotate sitting player clockwise for the next hand
     resetRoles();
@@ -978,6 +1002,11 @@
       for (let i = 0; i < count; i++) {
         let val = state.historyShowTotals ? totals[i] : hand.deltas[i] || 0;
         let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
+        if (hand.picker === i) {
+          cls += " history-picker-cell";
+        } else if (hand.partner === i) {
+          cls += " history-partner-cell";
+        }
         tr += `<td class="${cls}">${val > 0 ? '+' : ''}${val}</td>`;
       }
       tr += "</tr>";
