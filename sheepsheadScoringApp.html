@@ -418,18 +418,14 @@
     </div>
   </div>
 
-  <!-- Interactive Current Standings Card -->
+  <!-- Current Hand Card -->
   <div class="card">
     <label style="font-weight: bold;">Current Standings</label>
     <div class="instruction-text" id="roleInstruction">
-      Tap player cards to assign roles: <b>1st tap = Picker</b> | <b>2nd tap = Partner</b> | <b>3rd tap = Sat Out</b>
+      Tap player cards to assign roles.
     </div>
     <div class="totals-grid" id="totalsGrid"></div>
-  </div>
-
-  <!-- Entry Form Card -->
-  <div class="card">
-    <label style="margin-bottom: 10px; font-weight: bold;">Record Hand Outcome</label>
+    <label style="margin: 16px 0 10px; font-weight: bold;">Record Hand Outcome</label>
     <div class="grid">
       <div>
         <label>Hand Outcome</label>
@@ -910,13 +906,7 @@
 
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
-    if (state.handed === 3) {
-      instruction.innerHTML = "Tap player cards to assign roles: <b>1st tap = Picker</b>"
-        + (sittingPlayerCount() > 0 ? " | <b>2nd tap = Sat Out</b>" : "");
-    } else {
-      instruction.innerHTML = "Tap player cards to assign roles: <b>1st tap = Picker</b> | <b>2nd tap = Partner</b>"
-        + (sittingPlayerCount() > 0 ? " | <b>3rd tap = Sat Out</b>" : "");
-    }
+    instruction.textContent = "Tap player cards to assign roles.";
   }
 
   function handleCardTap(index) {
