@@ -388,18 +388,24 @@
       gap: 12px;
       margin-bottom: 8px;
     }
+    .history-header > label {
+      flex: 0 1 min-content;
+      line-height: 1.15;
+    }
     .history-actions {
       display: flex;
       gap: 8px;
-      flex-wrap: wrap;
+      flex: 0 0 auto;
+      flex-wrap: nowrap;
       justify-content: flex-end;
     }
     .history-toggle-button {
       width: auto;
-      min-width: 118px;
+      min-width: 104px;
       margin-top: 0;
       padding: 8px 10px;
       font-size: 0.85rem;
+      white-space: nowrap;
     }
   </style>
 </head>
