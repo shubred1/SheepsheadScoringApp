@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#00e676" />
+  <meta name="theme-color" content="#00e676" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#00894a" media="(prefers-color-scheme: light)" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Sheepshead" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/SheepsheadScoringApp/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/SheepsheadScoringApp/icons/icon-192.png" />
   <title>Sheepshead Scorekeeper</title>
   <style>
     :root {
@@ -1134,6 +1143,16 @@
 
   // Initial setup
   initGame();
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/SheepsheadScoringApp/sw.js", {
+        scope: "/SheepsheadScoringApp/"
+      }).catch(error => {
+        console.warn("Service worker registration failed", error);
+      });
+    });
+  }
 </script>
 </body>
 </html>
