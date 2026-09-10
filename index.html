@@ -67,8 +67,11 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 16px;
+      margin: -4px -6px 18px;
+      padding: 10px 12px;
       position: relative;
+      background: var(--header-bg);
+      border-radius: 6px;
     }
     h1 {
       margin: 0;
@@ -131,6 +134,21 @@
     .card {
       padding: 0;
       margin-bottom: 16px;
+    }
+    .game-section {
+      padding-bottom: 9px;
+    }
+    .history-section {
+      border-top: 1px solid var(--border);
+      padding-top: 9px;
+    }
+    @media (min-width: 700px) {
+      .game-section {
+        padding-bottom: 18px;
+      }
+      .history-section {
+        padding-top: 18px;
+      }
     }
     .grid {
       display: grid;
@@ -449,7 +467,7 @@
   </div>
 
   <!-- Current Hand Card -->
-  <div class="card">
+  <div class="card game-section">
     <label style="font-weight: bold;">Current Standings</label>
     <div class="instruction-text" id="roleInstruction">
       Tap player cards to assign roles.
@@ -481,7 +499,7 @@
   </div>
 
   <!-- Score History Table -->
-  <div class="card">
+  <div class="card history-section">
     <div class="history-header">
       <label style="margin-bottom: 0; font-weight: bold;">Hand History</label>
       <div class="history-actions">
