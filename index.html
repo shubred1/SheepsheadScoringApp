@@ -250,6 +250,13 @@
       display: grid;
       gap: 8px;
     }
+    .modal-player-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 0;
+    }
     .modal-rule-settings {
       display: grid;
       gap: 10px;
@@ -904,25 +911,27 @@
       div.className = "modal-player-row";
       const val = names[i] || "";
       div.innerHTML = `
-        <label>Player ${i + 1}</label>
+        <div class="modal-player-label-row">
+          <label style="margin-bottom: 0;">Player ${i + 1}</label>
+          ${modalMode === "settings" ? `
+            <label class="sit-checkbox-label">
+              <input 
+                class="modal-fixed-sat"
+                type="checkbox"
+                value="${i}"
+                onchange="updateModalSitCheckboxes()"
+                ${fixed.includes(i) ? "checked" : ""}
+              />
+              Skip
+            </label>
+          ` : ""}
+        </div>
         <input 
           class="modal-player-name"
           type="text" 
           placeholder="Player ${i + 1}" 
           value="${escapeAttribute(val)}" 
         />
-        ${modalMode === "settings" ? `
-          <label class="sit-checkbox-label">
-            <input 
-              class="modal-fixed-sat"
-              type="checkbox"
-              value="${i}"
-              onchange="updateModalSitCheckboxes()"
-              ${fixed.includes(i) ? "checked" : ""}
-            />
-            Sit indefinitely
-          </label>
-        ` : ""}
       `;
       container.appendChild(div);
     }
