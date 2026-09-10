@@ -250,6 +250,14 @@
       display: grid;
       gap: 8px;
     }
+    .modal-rule-settings {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .modal-rule-settings[hidden] {
+      display: none;
+    }
     .sit-checkbox-label {
       display: flex;
       align-items: center;
@@ -536,6 +544,16 @@
       </select>
     </div>
     <div class="grid" style="margin-top: 12px;" id="modalPlayerNameInputs"></div>
+    <div class="modal-rule-settings" id="modalRuleSettings" hidden>
+      <label class="sit-checkbox-label">
+        <input id="doubleOnBumpCheckbox" type="checkbox" />
+        Double on the bump
+      </label>
+      <label class="sit-checkbox-label">
+        <input id="noTrickPartnerCheckbox" type="checkbox" />
+        No trick partner doesn't lose
+      </label>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" type="button" onclick="closeModal()">Cancel</button>
       <button type="submit" id="modalSubmitButton">Save</button>
@@ -571,6 +589,8 @@
     fixedSats: [],
     historyNewestFirst: false,
     historyShowTotals: false,
+    doubleOnBump: true,
+    noTrickPartnerDoesntLose: true,
     theme: "dark",
     history: []
   };
@@ -588,6 +608,8 @@
     }
     state.handed = [3, 5].includes(parseInt(state.handed)) ? parseInt(state.handed) : 5;
     state.gameType = [3, 4, 5, 6, 7].includes(parseInt(state.gameType)) ? parseInt(state.gameType) : 6;
+    state.doubleOnBump = state.doubleOnBump !== false;
+    state.noTrickPartnerDoesntLose = state.noTrickPartnerDoesntLose !== false;
     state.theme = state.theme === "light" ? "light" : "dark";
     if (state.gameType < state.handed || state.gameType > state.handed + 2) {
       state.handed = state.gameType <= 4 ? 3 : 5;
@@ -603,6 +625,7 @@
 
     normalizeSatRoles();
     applyTheme();
+    updateOutcomeOptions();
   }
 
   function saveState() {
@@ -642,7 +665,10 @@
     document.getElementById("modalTitle").textContent = "New Game";
     document.getElementById("modalSubmitButton").textContent = "Start Game";
     document.getElementById("modalGameTypeField").hidden = false;
+    document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("modalGameType").value = currentGameModeValue();
+    document.getElementById("doubleOnBumpCheckbox").checked = true;
+    document.getElementById("noTrickPartnerCheckbox").checked = true;
     renderModalPlayerInputs(state.gameType, emptyPlayers());
     document.getElementById("settingsModal").hidden = false;
   }
@@ -650,9 +676,11 @@
   function openSettingsModal() {
     modalMode = "settings";
     closeMenu();
-    document.getElementById("modalTitle").textContent = "Modify Settings";
+    document.getElementById("modalTitle").textContent = "Game Settings";
     document.getElementById("modalSubmitButton").textContent = "Save";
     document.getElementById("modalGameTypeField").hidden = true;
+    document.getElementById("modalRuleSettings").hidden = false;
+    updateRuleSettingsInputs();
     renderModalPlayerInputs(state.gameType, state.players);
     document.getElementById("settingsModal").hidden = false;
   }
@@ -686,6 +714,32 @@
     applyTheme();
     updateThemeToggle();
     saveState();
+  }
+
+  function updateRuleSettingsInputs() {
+    document.getElementById("doubleOnBumpCheckbox").checked = state.doubleOnBump;
+    document.getElementById("noTrickPartnerCheckbox").checked = state.noTrickPartnerDoesntLose;
+  }
+
+  function updateOutcomeOptions() {
+    const doubleFactor = state.doubleOnBump ? 2 : 1;
+    const lossPicker = -2 * doubleFactor;
+    const lossPartner = -1 * doubleFactor;
+    const schneiderPicker = -4 * doubleFactor;
+    const schneiderPartner = -2 * doubleFactor;
+    const noTrickDefender = 3 * doubleFactor;
+    const noTrickPicker = state.noTrickPartnerDoesntLose ? -3 * noTrickDefender : -6 * doubleFactor;
+    const noTrickPartner = state.noTrickPartnerDoesntLose ? 0 : -3 * doubleFactor;
+
+    document.querySelector("#outcomeSelect option[value='win']").textContent = "Win - Standard (+2 / +1)";
+    document.querySelector("#outcomeSelect option[value='schneider']").textContent = "Win - Schneider (+4 / +2)";
+    document.querySelector("#outcomeSelect option[value='schwarz']").textContent = "Win - No Tricks / Schwarz (+6 / +3)";
+    document.querySelector("#outcomeSelect option[value='loss']").textContent =
+      `${state.doubleOnBump ? "Loss - Double Bump" : "Loss - Bump"} (${lossPicker} / ${lossPartner})`;
+    document.querySelector("#outcomeSelect option[value='schneider-loss']").textContent =
+      `Loss - Schneidered (${schneiderPicker} / ${schneiderPartner})`;
+    document.querySelector("#outcomeSelect option[value='schwarz-loss']").textContent =
+      `Loss - No Tricks Taken (${noTrickPicker} / ${noTrickPartner})`;
   }
 
   function escapeAttribute(value) {
@@ -916,6 +970,8 @@
       state.history = [];
       state.roles = { picker: null, partner: null, sat: null };
       state.fixedSats = [];
+      state.doubleOnBump = document.getElementById("doubleOnBumpCheckbox").checked;
+      state.noTrickPartnerDoesntLose = document.getElementById("noTrickPartnerCheckbox").checked;
       storeSatIndexes(defaultSatIndexes());
     } else if (modalMode === "settings") {
       for (let i = 0; i < state.gameType; i++) {
@@ -928,11 +984,14 @@
       if (isFixedSat(state.roles.partner)) {
         state.roles.partner = null;
       }
+      state.doubleOnBump = document.getElementById("doubleOnBumpCheckbox").checked;
+      state.noTrickPartnerDoesntLose = document.getElementById("noTrickPartnerCheckbox").checked;
       normalizeSatRoles();
     }
 
     closeModal();
     saveState();
+    updateOutcomeOptions();
     updateStandings();
   }
 
@@ -1020,6 +1079,7 @@
     const mult = parseInt(document.getElementById("multiplierSelect").value);
 
     let deltas = new Array(count).fill(0);
+    const bumpFactor = state.doubleOnBump ? 2 : 1;
     let basePicker = 2, basePartner = 1, baseDef = -1;
 
     switch (outcome) {
@@ -1030,13 +1090,13 @@
         basePicker = 6; basePartner = 3; baseDef = -3; 
         break;
       case "loss": 
-        basePicker = -4; basePartner = -2; baseDef = 2; 
+        basePicker = -2 * bumpFactor; basePartner = -1 * bumpFactor; baseDef = 1 * bumpFactor; 
         break;
       case "schneider-loss": 
-        basePicker = -8; basePartner = -4; baseDef = 4; 
+        basePicker = -4 * bumpFactor; basePartner = -2 * bumpFactor; baseDef = 2 * bumpFactor; 
         break;
       case "schwarz-loss": 
-        basePicker = -12; basePartner = -6; baseDef = 6; 
+        basePicker = -6 * bumpFactor; basePartner = -3 * bumpFactor; baseDef = 3 * bumpFactor; 
         break;
     }
 
@@ -1057,11 +1117,16 @@
     } else {
       // Picker + Partner
       deltas[pickerIdx] = pPts;
-      deltas[partnerIdx] = ptPts;
+      deltas[partnerIdx] = outcome === "schwarz-loss" && state.noTrickPartnerDoesntLose ? 0 : ptPts;
       for (let i = 0; i < count; i++) {
         if (i !== pickerIdx && i !== partnerIdx && !sats.includes(i)) {
           deltas[i] = defPts;
         }
+      }
+      if (outcome === "schwarz-loss" && state.noTrickPartnerDoesntLose) {
+        deltas[pickerIdx] = 0 - deltas.reduce((sum, delta, index) => (
+          index === pickerIdx ? sum : sum + delta
+        ), 0);
       }
     }
 
