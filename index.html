@@ -320,6 +320,19 @@
     .theme-switch input:checked + .theme-switch-slider::before {
       transform: translateX(24px);
     }
+    .about-content {
+      display: grid;
+      gap: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    .about-content p {
+      margin: 0;
+    }
+    .about-content strong {
+      color: var(--accent);
+    }
 
     /* Standings Grid */
     .totals-grid {
@@ -479,6 +492,7 @@
         <button class="menu-item" type="button" onclick="openNewGameModal()">New Game</button>
         <button class="menu-item" type="button" onclick="openSettingsModal()">Game Settings</button>
         <button class="menu-item" type="button" onclick="openThemeModal()">Theme</button>
+        <button class="menu-item" type="button" onclick="openAboutModal()">About</button>
       </div>
     </div>
   </div>
@@ -584,8 +598,26 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="aboutModal" hidden>
+  <div class="modal">
+    <h2>About</h2>
+    <div class="about-content">
+      <p><strong>Sheepshead Scorekeeper</strong></p>
+      <p>Version <span id="appVersion"></span></p>
+      <p>A local-first scorekeeper for 3-handed and 5-handed Sheepshead games.</p>
+      <p>Scores, player names, settings, and theme preference are saved on this device in this browser.</p>
+      <p>The app can be installed and used offline after it has loaded once while online.</p>
+    </div>
+    <div class="modal-actions single-action">
+      <button type="button" onclick="closeAboutModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="version.js"></script>
 <script>
   const STORAGE_KEY = "sheepshead_scorekeeper_data";
+  const APP_VERSION = self.SHEEPSHEAD_APP_VERSION;
   const MAX_PLAYERS = 7;
 
   let state = {
@@ -698,6 +730,12 @@
     document.getElementById("themeModal").hidden = false;
   }
 
+  function openAboutModal() {
+    closeMenu();
+    document.getElementById("appVersion").textContent = APP_VERSION;
+    document.getElementById("aboutModal").hidden = false;
+  }
+
   function closeModal() {
     modalMode = null;
     document.getElementById("settingsModal").hidden = true;
@@ -705,6 +743,10 @@
 
   function closeThemeModal() {
     document.getElementById("themeModal").hidden = true;
+  }
+
+  function closeAboutModal() {
+    document.getElementById("aboutModal").hidden = true;
   }
 
   function applyTheme() {

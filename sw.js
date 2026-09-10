@@ -1,7 +1,10 @@
-const CACHE_NAME = "sheepshead-scorekeeper-v1";
+importScripts("./version.js");
+
+const CACHE_NAME = `sheepshead-scorekeeper-${self.SHEEPSHEAD_APP_VERSION}`;
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./version.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
