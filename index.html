@@ -75,6 +75,15 @@
       color: var(--accent);
       font-size: 1.45rem;
       line-height: 1.1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .title-icon {
+      width: 1.25em;
+      height: 1.25em;
+      flex: 0 0 auto;
+      border-radius: 6px;
     }
     @media (min-width: 700px) {
       h1 {
@@ -433,7 +442,7 @@
 
 <div class="container">
   <div class="app-header">
-    <h1>Sheepshead Scorekeeper</h1>
+    <h1><img class="title-icon" src="icons/icon-192.png" alt="Sheepshead" />Scorekeeper</h1>
     <div class="menu-wrapper">
       <button class="menu-button" type="button" onclick="toggleMenu()">Menu</button>
       <div class="menu-panel" id="appMenu" hidden>
