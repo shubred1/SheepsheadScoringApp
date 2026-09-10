@@ -113,10 +113,7 @@
       background: var(--field-bg);
     }
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px;
+      padding: 0;
       margin-bottom: 16px;
     }
     .grid {
@@ -416,6 +413,12 @@
       font-size: 0.85rem;
       white-space: nowrap;
     }
+    .submit-hand-button {
+      display: block;
+      width: min(100%, 260px);
+      margin-left: auto;
+      margin-right: auto;
+    }
   </style>
 </head>
 <body>
@@ -462,7 +465,7 @@
         </select>
       </div>
     </div>
-    <button id="submitHandButton" onclick="submitPresetHand()" disabled>Submit Hand</button>
+    <button class="submit-hand-button" id="submitHandButton" onclick="submitPresetHand()" disabled>Submit Hand</button>
   </div>
 
   <!-- Score History Table -->
