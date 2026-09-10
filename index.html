@@ -99,8 +99,10 @@
     }
     .menu-button {
       width: auto;
-      min-width: 92px;
+      min-width: 44px;
       margin-top: 0;
+      font-size: 1.25rem;
+      line-height: 1;
     }
     .menu-panel {
       position: absolute;
@@ -457,7 +459,7 @@
   <div class="app-header">
     <h1><img class="title-icon" src="icons/icon-192.png" alt="Sheepshead" />Scorekeeper</h1>
     <div class="menu-wrapper">
-      <button class="menu-button" type="button" onclick="toggleMenu()">Menu</button>
+      <button class="menu-button" type="button" onclick="toggleMenu()" aria-label="Menu">☰</button>
       <div class="menu-panel" id="appMenu" hidden>
         <button class="menu-item" type="button" onclick="openNewGameModal()">New Game</button>
         <button class="menu-item" type="button" onclick="openSettingsModal()">Game Settings</button>
