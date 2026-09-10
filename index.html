@@ -276,7 +276,7 @@
     /* Standings Grid */
     .totals-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(var(--mobile-player-columns, 3), minmax(0, 1fr));
       gap: 8px;
       text-align: center;
     }
@@ -1061,6 +1061,7 @@
 
     // Render Standings Grid
     const totalsGrid = document.getElementById("totalsGrid");
+    totalsGrid.style.setProperty("--mobile-player-columns", Math.ceil(count / 2));
     totalsGrid.style.setProperty("--player-count", count);
     totalsGrid.innerHTML = "";
     for (let i = 0; i < count; i++) {
