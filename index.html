@@ -90,14 +90,19 @@
   <form class="modal" onsubmit="saveModal(event)">
     <h2 id="modalTitle">New Game</h2>
     <div id="modalGameTypeField">
-      <label>Game Mode</label>
-      <select id="modalGameType" onchange="handleModalGameTypeChange()">
-        <option value="3-3">3 handed - 3 players</option>
-        <option value="3-4">3 handed - 4 players</option>
-        <option value="5">5 Handed - 5 players</option>
-        <option value="6">5 Handed - 6 players</option>
-        <option value="7">5 Handed - 7 players</option>
-      </select>
+      <div class="grid">
+        <div>
+          <label>Game Type</label>
+          <select id="modalHanded" onchange="handleModalGameTypeChange()">
+            <option value="3">3-Handed</option>
+            <option value="5">5-Handed</option>
+          </select>
+        </div>
+        <div>
+          <label>Number of Players</label>
+          <select id="modalPlayerCount" onchange="handleModalPlayerCountChange()"></select>
+        </div>
+      </div>
     </div>
     <div class="modal-player-list" id="modalPlayerNameInputs"></div>
     <div class="modal-rule-settings" id="modalRuleSettings" hidden>

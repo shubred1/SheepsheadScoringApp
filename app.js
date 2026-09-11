@@ -1,11 +1,12 @@
   const STORAGE_KEY = "sheepshead_scorekeeper_data";
   const APP_VERSION = self.SHEEPSHEAD_APP_VERSION;
   const DATA_VERSION = 3;
-  const MAX_PLAYERS = 7;
+  const MAX_PLAYERS = 8;
 
   let appData = null;
   let state = null;
   let modalMode = null;
+  let modalPlayerDrafts = [];
   let editHandIndex = null;
   let editHandDraft = null;
   let shouldShowCompatibilityNotice = false;
@@ -44,7 +45,7 @@
   }
 
   function activePlayers(game = state) {
-    return game.players.slice(0, game.gameType);
+    return game.players.slice(0, game.playerCount);
   }
 
   function activePlayerIds(game = state) {
@@ -64,11 +65,25 @@
     return activePlayers().findIndex(player => player.id === id);
   }
 
-  function defaultSatIds(count = state.gameType, handed = state.handed, players = state.players) {
+  function defaultSatIds(count = state.playerCount, handed = state.handed, players = state.players) {
     return defaultSatIndexes(count, handed)
       .map(index => players[index])
       .filter(Boolean)
       .map(player => player.id);
+  }
+
+  function validPlayerCountsForHanded(handed) {
+    return handed === 3 ? [3, 4] : [5, 6, 7, 8];
+  }
+
+  function defaultPlayerCountForHanded(handed) {
+    return handed === 3 ? 3 : 5;
+  }
+
+  function normalizePlayerCountForHanded(handed, count) {
+    const parsed = parseInt(count);
+    const validCounts = validPlayerCountsForHanded(handed);
+    return validCounts.includes(parsed) ? parsed : defaultPlayerCountForHanded(handed);
   }
 
   function createGame(overrides = {}) {
@@ -79,7 +94,7 @@
       createdAt: timestamp,
       updatedAt: timestamp,
       handed: 5,
-      gameType: 6,
+      playerCount: 6,
       players: emptyPlayers(),
       fixedSatIds: [],
       doubleOnBump: true,
@@ -153,11 +168,13 @@
       }
     }
     state.handed = [3, 5].includes(parseInt(state.handed)) ? parseInt(state.handed) : 5;
-    state.gameType = [3, 4, 5, 6, 7].includes(parseInt(state.gameType)) ? parseInt(state.gameType) : 6;
+    const savedPlayerCount = state.playerCount ?? state.gameType;
+    state.playerCount = normalizePlayerCountForHanded(state.handed, savedPlayerCount);
     state.doubleOnBump = state.doubleOnBump !== false;
     state.noTrickPartnerDoesntLose = state.noTrickPartnerDoesntLose !== false;
-    if (state.gameType < state.handed || state.gameType > state.handed + 2) {
-      state.handed = state.gameType <= 4 ? 3 : 5;
+    if (!validPlayerCountsForHanded(state.handed).includes(state.playerCount)) {
+      state.handed = state.playerCount <= 4 ? 3 : 5;
+      state.playerCount = normalizePlayerCountForHanded(state.handed, state.playerCount);
     }
     state.players = Array.isArray(state.players) ? state.players.map(normalizePlayer) : emptyPlayers();
     while (state.players.length < MAX_PLAYERS) {
@@ -210,17 +227,27 @@
     document.getElementById("appMenu").hidden = true;
   }
 
-  function currentGameModeValue() {
-    return state.handed === 3 ? `3-${state.gameType}` : String(state.gameType);
+  function populateModalPlayerCountOptions(handed, selectedCount) {
+    const select = document.getElementById("modalPlayerCount");
+    const validCounts = validPlayerCountsForHanded(handed);
+    const nextSelected = validCounts.includes(parseInt(selectedCount))
+      ? parseInt(selectedCount)
+      : defaultPlayerCountForHanded(handed);
+    select.innerHTML = "";
+    validCounts.forEach(count => {
+      select.innerHTML += `<option value="${count}">${count}</option>`;
+    });
+    select.value = String(nextSelected);
+    return nextSelected;
   }
 
-  function parseGameModeValue(value) {
-    if (value.includes("-")) {
-      const parts = value.split("-").map(part => parseInt(part));
-      return { handed: parts[0], gameType: parts[1] };
-    }
-
-    return { handed: 5, gameType: parseInt(value) };
+  function currentModalGameSettings() {
+    const handed = parseInt(document.getElementById("modalHanded").value);
+    const playerCount = parseInt(document.getElementById("modalPlayerCount").value);
+    return {
+      handed,
+      playerCount: normalizePlayerCountForHanded(handed, playerCount)
+    };
   }
 
   function openNewGameModal() {
@@ -232,10 +259,12 @@
     document.getElementById("modalCancelButton").hidden = firstGameRequired;
     document.getElementById("modalGameTypeField").hidden = false;
     document.getElementById("modalRuleSettings").hidden = false;
-    document.getElementById("modalGameType").value = currentGameModeValue();
+    document.getElementById("modalHanded").value = String(state.handed);
+    const playerCount = populateModalPlayerCountOptions(state.handed, defaultPlayerCountForHanded(state.handed));
     document.getElementById("doubleOnBumpCheckbox").checked = true;
     document.getElementById("noTrickPartnerCheckbox").checked = true;
-    renderModalPlayerInputs(state.gameType, emptyPlayers());
+    modalPlayerDrafts = emptyPlayers();
+    renderModalPlayerInputs(playerCount, modalPlayerDrafts);
     document.getElementById("settingsModal").hidden = false;
   }
 
@@ -248,7 +277,8 @@
     document.getElementById("modalGameTypeField").hidden = true;
     document.getElementById("modalRuleSettings").hidden = false;
     updateRuleSettingsInputs();
-    renderModalPlayerInputs(state.gameType, state.players);
+    modalPlayerDrafts = state.players.map(normalizePlayer);
+    renderModalPlayerInputs(state.playerCount, state.players);
     document.getElementById("settingsModal").hidden = false;
   }
 
@@ -430,10 +460,10 @@
   }
 
   function sittingPlayerCount() {
-    return Math.max(0, state.gameType - state.handed);
+    return Math.max(0, state.playerCount - state.handed);
   }
 
-  function defaultSatIndexes(count = state.gameType, handed = state.handed) {
+  function defaultSatIndexes(count = state.playerCount, handed = state.handed) {
     const sittingCount = Math.max(0, count - handed);
     const start = count - sittingCount;
     return Array.from({ length: sittingCount }, (_, index) => start + index);
@@ -474,8 +504,8 @@
     if (next < 0) {
       return null;
     }
-    for (let step = 0; step < state.gameType; step++) {
-      next = (next + 1) % state.gameType;
+    for (let step = 0; step < state.playerCount; step++) {
+      next = (next + 1) % state.playerCount;
       const nextId = playerIdAt(next);
       if (nextId && !fixedSatIds().includes(nextId) && !reserved.includes(nextId)) {
         return nextId;
@@ -520,7 +550,7 @@
       }
     }
 
-    for (let i = 0; i < state.gameType && nextSats.length < sittingCount; i++) {
+    for (let i = 0; i < state.playerCount && nextSats.length < sittingCount; i++) {
       const id = playerIdAt(i);
       if (id && !fixed.includes(id) && !nextSats.includes(id)) {
         nextSats.push(id);
@@ -562,7 +592,8 @@
     container.className = modalMode === "settings" ? "modal-player-list" : "grid";
     container.innerHTML = "";
     const fixed = fixedSatIds();
-    const modalPlayers = Array.from({ length: count }, (_, index) => normalizePlayer(players[index]));
+    modalPlayerDrafts = Array.from({ length: MAX_PLAYERS }, (_, index) => normalizePlayer(players[index]));
+    const modalPlayers = modalPlayerDrafts.slice(0, count);
 
     for (let i = 0; i < count; i++) {
       const player = modalPlayers[i];
@@ -622,7 +653,7 @@
   }
 
   function getModalPlayers() {
-    const players = emptyPlayers();
+    const players = modalPlayerDrafts.length ? modalPlayerDrafts.map(normalizePlayer) : emptyPlayers();
     document.querySelectorAll(".modal-player-row").forEach((row, index) => {
       const input = row.querySelector(".modal-player-name");
       players[index] = {
@@ -736,8 +767,15 @@
   }
 
   function handleModalGameTypeChange() {
-    const mode = parseGameModeValue(document.getElementById("modalGameType").value);
-    renderModalPlayerInputs(mode.gameType, getModalPlayers());
+    const handed = parseInt(document.getElementById("modalHanded").value);
+    const players = getModalPlayers();
+    const playerCount = populateModalPlayerCountOptions(handed, defaultPlayerCountForHanded(handed));
+    renderModalPlayerInputs(playerCount, players);
+  }
+
+  function handleModalPlayerCountChange() {
+    const settings = currentModalGameSettings();
+    renderModalPlayerInputs(settings.playerCount, getModalPlayers());
   }
 
   function saveModal(event) {
@@ -745,10 +783,10 @@
     const modalPlayers = getModalPlayers();
 
     if (modalMode === "new") {
-      const mode = parseGameModeValue(document.getElementById("modalGameType").value);
+      const mode = currentModalGameSettings();
       const newGame = createGame({
         handed: mode.handed,
-        gameType: mode.gameType,
+        playerCount: mode.playerCount,
         players: modalPlayers,
         roles: { pickerId: null, partnerId: null, satIds: [] },
         doubleOnBump: document.getElementById("doubleOnBumpCheckbox").checked,
@@ -945,7 +983,7 @@
 
   function renderEditHandPlayers() {
     const grid = document.getElementById("editHandPlayersGrid");
-    const count = state.gameType;
+    const count = state.playerCount;
     grid.style.setProperty("--mobile-player-columns", Math.ceil(count / 2));
     grid.style.setProperty("--player-count", count);
     grid.innerHTML = "";
@@ -1062,7 +1100,7 @@
   }
 
   function updateStandings() {
-    const count = state.gameType;
+    const count = state.playerCount;
     const players = activePlayers();
     const totals = {};
     players.forEach(player => {

@@ -241,6 +241,9 @@
     .modal-actions.single-action {
       grid-template-columns: 1fr;
     }
+    #modalGameTypeField {
+      margin-bottom: 12px;
+    }
     .modal-player-list {
       display: grid;
       grid-template-columns: 1fr;
