@@ -244,12 +244,12 @@
     .modal-player-list {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 10px;
-      margin-top: 12px;
+      gap: 5px;
+      margin-top: 8px;
     }
     .modal-player-list .modal-player-row {
       display: block;
-      padding: 8px;
+      padding: 4px 5px;
       border: 1px solid var(--border);
       border-radius: 6px;
       background: var(--field-bg);
@@ -257,32 +257,31 @@
     .modal-player-list .modal-player-row.dragging {
       opacity: 0.65;
     }
+    .modal-player-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
     .modal-player-main {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .modal-player-position {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: 0 0 24px;
-      color: var(--subtext);
-      font-weight: bold;
-      font-size: 0.9rem;
-    }
-    .modal-player-name-label {
-      flex: 1 1 180px;
-      min-width: 140px;
-      margin-bottom: 0;
+      gap: 5px;
+      flex-wrap: nowrap;
     }
     .modal-player-label-text {
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 0;
+      font-size: 0.75rem;
+      color: var(--subtext);
+      font-weight: bold;
     }
     .modal-player-name {
+      flex: 1 1 150px;
+      min-width: 0;
       margin: 0;
+      padding: 6px 8px;
     }
     .reorder-handle {
       width: 34px;
@@ -292,40 +291,18 @@
       margin-top: 0;
       padding: 0;
       line-height: 1;
+      font-size: 1.1rem;
       cursor: grab;
       touch-action: none;
     }
     .reorder-handle:active {
       cursor: grabbing;
     }
-    .modal-reorder-controls {
-      display: flex;
-      gap: 6px;
-      flex: 0 0 auto;
-    }
-    .modal-move-button {
-      width: 34px;
-      min-width: 34px;
-      height: 44px;
-      flex: 0 0 34px;
-      margin-top: 0;
-      padding: 0;
-    }
     .modal-player-list .sit-checkbox-label {
       flex: 0 0 auto;
-      min-height: 34px;
+      min-height: 20px;
       padding: 0 2px;
-    }
-    @media (max-width: 380px) {
-      .modal-player-main {
-        gap: 6px;
-      }
-      .modal-player-name-label {
-        flex-basis: calc(100% - 72px);
-      }
-      .modal-reorder-controls {
-        margin-left: 32px;
-      }
+      font-size: 0.82rem;
     }
     .modal-rule-settings {
       display: grid;

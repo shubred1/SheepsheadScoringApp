@@ -576,32 +576,8 @@
       div.addEventListener("drop", handleModalDrop);
       const val = player.name || "";
       div.innerHTML = modalMode === "settings" ? `
-        <div class="modal-player-main">
-          <span class="modal-player-position">${i + 1}</span>
-          ${modalMode === "settings" ? `
-            <button
-              class="reorder-handle"
-              type="button"
-              aria-label="Drag to reorder Player ${i + 1}"
-              title="Drag to reorder"
-              onpointerdown="startModalPointerReorder(event)"
-            >≡</button>
-          ` : ""}
-          <label class="modal-player-name-label">
-            <span class="modal-player-label-text">Player ${i + 1}</span>
-            <input 
-              class="modal-player-name"
-              type="text" 
-              placeholder="Player ${i + 1}" 
-              value="${escapeAttribute(val)}" 
-            />
-          </label>
-          ${modalMode === "settings" ? `
-            <div class="modal-reorder-controls">
-              <button class="btn-secondary modal-move-button" type="button" onclick="moveModalPlayerRow(this, -1)" aria-label="Move Player ${i + 1} up">↑</button>
-              <button class="btn-secondary modal-move-button" type="button" onclick="moveModalPlayerRow(this, 1)" aria-label="Move Player ${i + 1} down">↓</button>
-            </div>
-          ` : ""}
+        <div class="modal-player-top">
+          <span class="modal-player-label-text">Player ${i + 1}</span>
           ${modalMode === "settings" ? `
             <label class="sit-checkbox-label">
               <input 
@@ -614,6 +590,21 @@
               Skip
             </label>
           ` : ""}
+        </div>
+        <div class="modal-player-main">
+          <button
+            class="reorder-handle"
+            type="button"
+            aria-label="Drag to reorder Player ${i + 1}"
+            title="Drag to reorder"
+            onpointerdown="startModalPointerReorder(event)"
+          >≡</button>
+          <input 
+            class="modal-player-name"
+            type="text" 
+            placeholder="Player ${i + 1}" 
+            value="${escapeAttribute(val)}" 
+          />
         </div>
       ` : `
         <label>Player ${i + 1}</label>
@@ -660,33 +651,13 @@
 
   function updateModalPlayerLabels() {
     document.querySelectorAll(".modal-player-row").forEach((row, index) => {
-      const position = row.querySelector(".modal-player-position");
       const label = row.querySelector(".modal-player-label-text");
       const input = row.querySelector(".modal-player-name");
       const handle = row.querySelector(".reorder-handle");
-      const upButton = row.querySelector(".modal-move-button:first-child");
-      const downButton = row.querySelector(".modal-move-button:last-child");
-      if (position) position.textContent = String(index + 1);
       if (label) label.textContent = `Player ${index + 1}`;
       if (input) input.placeholder = `Player ${index + 1}`;
       if (handle) handle.setAttribute("aria-label", `Drag to reorder Player ${index + 1}`);
-      if (upButton) upButton.disabled = index === 0;
-      if (downButton) downButton.disabled = index === document.querySelectorAll(".modal-player-row").length - 1;
     });
-  }
-
-  function moveModalPlayerRow(control, direction) {
-    const row = control.closest(".modal-player-row");
-    if (!row) return;
-    const sibling = direction < 0 ? row.previousElementSibling : row.nextElementSibling;
-    if (!sibling) return;
-    if (direction < 0) {
-      row.parentElement.insertBefore(row, sibling);
-    } else {
-      row.parentElement.insertBefore(sibling, row);
-    }
-    updateModalSitCheckboxes();
-    updateModalPlayerLabels();
   }
 
   let draggedModalPlayerRow = null;
