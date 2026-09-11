@@ -595,7 +595,7 @@
       </label>
     </div>
     <div class="modal-actions">
-      <button class="btn-secondary" type="button" onclick="closeModal()">Cancel</button>
+      <button class="btn-secondary" id="modalCancelButton" type="button" onclick="closeModal()">Cancel</button>
       <button type="submit" id="modalSubmitButton">Save</button>
     </div>
   </form>
@@ -742,17 +742,24 @@
   }
 
   function createAppData(theme = "dark") {
-    const game = createGame();
     return {
       dataVersion: DATA_VERSION,
       preferences: { theme },
-      games: [game],
-      activeGameId: game.id
+      games: [],
+      activeGameId: null
     };
   }
 
   function getActiveGame() {
-    return appData.games.find(game => game.id === appData.activeGameId) || appData.games[0];
+    return appData.games.find(game => game.id === appData.activeGameId) || appData.games[0] || null;
+  }
+
+  function hasSavedGame() {
+    return appData && Array.isArray(appData.games) && appData.games.length > 0;
+  }
+
+  function createRuntimeDraftGame() {
+    return createGame({ id: "new-game-draft" });
   }
 
   function loadState() {
@@ -771,24 +778,30 @@
 
     if (!hadSavedData) {
       appData = createAppData();
-      state = getActiveGame();
+      state = createRuntimeDraftGame();
       shouldOpenNewGameOnFirstRun = true;
       saveState();
     } else if (!parsed || parsed.dataVersion !== DATA_VERSION || !Array.isArray(parsed.games)) {
       const recoveredTheme = parsed && parsed.theme === "light" ? "light" : "dark";
       appData = createAppData(recoveredTheme);
-      state = getActiveGame();
+      state = createRuntimeDraftGame();
       shouldShowCompatibilityNotice = true;
       saveState();
     } else {
       appData = parsed;
       appData.preferences = appData.preferences || {};
       appData.preferences.theme = appData.preferences.theme === "light" ? "light" : "dark";
-      appData.games = appData.games.length ? appData.games : [createGame()];
-      appData.activeGameId = appData.games.some(game => game.id === appData.activeGameId)
-        ? appData.activeGameId
-        : appData.games[0].id;
-      state = getActiveGame();
+      appData.games = Array.isArray(appData.games) ? appData.games : [];
+      if (hasSavedGame()) {
+        appData.activeGameId = appData.games.some(game => game.id === appData.activeGameId)
+          ? appData.activeGameId
+          : appData.games[0].id;
+        state = getActiveGame();
+      } else {
+        appData.activeGameId = null;
+        state = createRuntimeDraftGame();
+        shouldOpenNewGameOnFirstRun = true;
+      }
     }
     state.handed = [3, 5].includes(parseInt(state.handed)) ? parseInt(state.handed) : 5;
     state.gameType = [3, 4, 5, 6, 7].includes(parseInt(state.gameType)) ? parseInt(state.gameType) : 6;
@@ -861,8 +874,10 @@
   function openNewGameModal() {
     modalMode = "new";
     closeMenu();
+    const firstGameRequired = !hasSavedGame();
     document.getElementById("modalTitle").textContent = "New Game";
     document.getElementById("modalSubmitButton").textContent = "Start Game";
+    document.getElementById("modalCancelButton").hidden = firstGameRequired;
     document.getElementById("modalGameTypeField").hidden = false;
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("modalGameType").value = currentGameModeValue();
@@ -877,6 +892,7 @@
     closeMenu();
     document.getElementById("modalTitle").textContent = "Game Settings";
     document.getElementById("modalSubmitButton").textContent = "Save";
+    document.getElementById("modalCancelButton").hidden = false;
     document.getElementById("modalGameTypeField").hidden = true;
     document.getElementById("modalRuleSettings").hidden = false;
     updateRuleSettingsInputs();
@@ -907,6 +923,10 @@
   }
 
   function closeModal() {
+    if (modalMode === "new" && !hasSavedGame()) {
+      document.getElementById("settingsModal").hidden = false;
+      return;
+    }
     modalMode = null;
     document.getElementById("settingsModal").hidden = true;
   }
