@@ -705,6 +705,7 @@
   let editHandIndex = null;
   let editHandDraft = null;
   let shouldShowCompatibilityNotice = false;
+  let shouldOpenNewGameOnFirstRun = false;
 
   function createId(prefix) {
     const id = crypto && crypto.randomUUID
@@ -765,11 +766,19 @@
         console.error("Could not parse saved game state", e);
       }
     }
-    if (!parsed || parsed.dataVersion !== DATA_VERSION || !Array.isArray(parsed.games)) {
+    shouldShowCompatibilityNotice = false;
+    shouldOpenNewGameOnFirstRun = false;
+
+    if (!hadSavedData) {
+      appData = createAppData();
+      state = getActiveGame();
+      shouldOpenNewGameOnFirstRun = true;
+      saveState();
+    } else if (!parsed || parsed.dataVersion !== DATA_VERSION || !Array.isArray(parsed.games)) {
       const recoveredTheme = parsed && parsed.theme === "light" ? "light" : "dark";
       appData = createAppData(recoveredTheme);
       state = getActiveGame();
-      shouldShowCompatibilityNotice = hadSavedData;
+      shouldShowCompatibilityNotice = true;
       saveState();
     } else {
       appData = parsed;
@@ -822,6 +831,8 @@
     updateStandings();
     if (shouldShowCompatibilityNotice) {
       document.getElementById("compatibilityModal").hidden = false;
+    } else if (shouldOpenNewGameOnFirstRun) {
+      openNewGameModal();
     }
   }
 
