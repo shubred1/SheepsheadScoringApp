@@ -1,6 +1,6 @@
   const STORAGE_KEY = "sheepshead_scorekeeper_data";
   const APP_VERSION = self.SHEEPSHEAD_APP_VERSION;
-  const DATA_VERSION = 2;
+  const DATA_VERSION = 3;
   const MAX_PLAYERS = 7;
 
   let appData = null;
@@ -22,8 +22,53 @@
     return new Date().toISOString();
   }
 
-  function emptyPlayers() {
-    return new Array(MAX_PLAYERS).fill("");
+  function createPlayer(name = "") {
+    return {
+      id: createId("player"),
+      name
+    };
+  }
+
+  function emptyPlayers(count = MAX_PLAYERS) {
+    return Array.from({ length: count }, () => createPlayer());
+  }
+
+  function normalizePlayer(player) {
+    if (player && typeof player === "object" && typeof player.id === "string") {
+      return {
+        id: player.id,
+        name: typeof player.name === "string" ? player.name : ""
+      };
+    }
+    return createPlayer(typeof player === "string" ? player : "");
+  }
+
+  function activePlayers(game = state) {
+    return game.players.slice(0, game.gameType);
+  }
+
+  function activePlayerIds(game = state) {
+    return activePlayers(game).map(player => player.id);
+  }
+
+  function playerAt(index) {
+    return activePlayers()[index] || null;
+  }
+
+  function playerIdAt(index) {
+    const player = playerAt(index);
+    return player ? player.id : null;
+  }
+
+  function playerIndexById(id) {
+    return activePlayers().findIndex(player => player.id === id);
+  }
+
+  function defaultSatIds(count = state.gameType, handed = state.handed, players = state.players) {
+    return defaultSatIndexes(count, handed)
+      .map(index => players[index])
+      .filter(Boolean)
+      .map(player => player.id);
   }
 
   function createGame(overrides = {}) {
@@ -36,10 +81,10 @@
       handed: 5,
       gameType: 6,
       players: emptyPlayers(),
-      fixedSats: [],
+      fixedSatIds: [],
       doubleOnBump: true,
       noTrickPartnerDoesntLose: true,
-      roles: { picker: null, partner: null, sat: 5 },
+      roles: { pickerId: null, partnerId: null, satIds: [] },
       history: [],
       ...overrides
     };
@@ -86,7 +131,7 @@
       shouldOpenNewGameOnFirstRun = true;
       saveState();
     } else if (!parsed || parsed.dataVersion !== DATA_VERSION || !Array.isArray(parsed.games)) {
-      const recoveredTheme = parsed && parsed.theme === "light" ? "light" : "dark";
+      const recoveredTheme = parsed && (parsed.theme === "light" || parsed.preferences?.theme === "light") ? "light" : "dark";
       appData = createAppData(recoveredTheme);
       state = createRuntimeDraftGame();
       shouldShowCompatibilityNotice = true;
@@ -114,16 +159,19 @@
     if (state.gameType < state.handed || state.gameType > state.handed + 2) {
       state.handed = state.gameType <= 4 ? 3 : 5;
     }
-    state.players = Array.isArray(state.players) ? state.players : emptyPlayers();
+    state.players = Array.isArray(state.players) ? state.players.map(normalizePlayer) : emptyPlayers();
     while (state.players.length < MAX_PLAYERS) {
-      state.players.push("");
+      state.players.push(createPlayer());
     }
     if (!state.roles) {
-      state.roles = { picker: null, partner: null, sat: null };
+      state.roles = { pickerId: null, partnerId: null, satIds: [] };
     }
+    state.roles.pickerId = activePlayerIds().includes(state.roles.pickerId) ? state.roles.pickerId : null;
+    state.roles.partnerId = activePlayerIds().includes(state.roles.partnerId) ? state.roles.partnerId : null;
+    state.roles.satIds = Array.isArray(state.roles.satIds) ? state.roles.satIds : [];
     state.history = Array.isArray(state.history) ? state.history : [];
-    state.fixedSats = Array.isArray(state.fixedSats) ? state.fixedSats : [];
-    state.fixedSats = fixedSatIndexes();
+    state.fixedSatIds = Array.isArray(state.fixedSatIds) ? state.fixedSatIds : [];
+    state.fixedSatIds = fixedSatIds();
 
     normalizeSatRoles();
     applyTheme();
@@ -318,8 +366,9 @@
   }
 
   function calculateHand({ picker, partner, sats, outcome, multiplier, gameSettings }) {
-    const count = gameSettings.gameType;
-    const deltas = new Array(count).fill(0);
+    const players = activePlayers(gameSettings);
+    const playerIds = players.map(player => player.id);
+    const deltas = {};
     const bumpFactor = gameSettings.doubleOnBump ? 2 : 1;
     let basePicker = 2, basePartner = 1, baseDef = -1;
 
@@ -347,24 +396,24 @@
 
     if (gameSettings.handed === 3 || partner === null) {
       let pickerTotal = 0;
-      for (let i = 0; i < count; i++) {
-        if (i !== picker && !sats.includes(i)) {
-          deltas[i] = defPts;
+      playerIds.forEach(id => {
+        if (id !== picker && !sats.includes(id)) {
+          deltas[id] = defPts;
           pickerTotal -= defPts;
         }
-      }
+      });
       deltas[picker] = pickerTotal;
     } else {
       deltas[picker] = pPts;
       deltas[partner] = outcome === "schwarz-loss" && gameSettings.noTrickPartnerDoesntLose ? 0 : ptPts;
-      for (let i = 0; i < count; i++) {
-        if (i !== picker && i !== partner && !sats.includes(i)) {
-          deltas[i] = defPts;
+      playerIds.forEach(id => {
+        if (id !== picker && id !== partner && !sats.includes(id)) {
+          deltas[id] = defPts;
         }
-      }
+      });
       if (outcome === "schwarz-loss" && gameSettings.noTrickPartnerDoesntLose) {
-        deltas[picker] = 0 - deltas.reduce((sum, delta, index) => (
-          index === picker ? sum : sum + delta
+        deltas[picker] = 0 - Object.entries(deltas).reduce((sum, [id, delta]) => (
+          id === picker ? sum : sum + delta
         ), 0);
       }
     }
@@ -390,58 +439,46 @@
     return Array.from({ length: sittingCount }, (_, index) => start + index);
   }
 
-  function satIndexes() {
-    const rawSat = state.roles.sat;
-    const values = Array.isArray(rawSat) ? rawSat : rawSat === null ? [] : [rawSat];
-    return values
-      .map(index => parseInt(index))
-      .filter((index, arrayIndex, indexes) => (
-        Number.isInteger(index) &&
-        index >= 0 &&
-        index < state.gameType &&
-        indexes.indexOf(index) === arrayIndex
-      ));
+  function validPlayerIds(ids) {
+    const available = activePlayerIds();
+    return ids
+      .filter((id, index, values) => available.includes(id) && values.indexOf(id) === index);
   }
 
-  function fixedSatIndexes() {
-    const values = Array.isArray(state.fixedSats) ? state.fixedSats : [];
-    return values
-      .map(index => parseInt(index))
-      .filter((index, arrayIndex, indexes) => (
-        Number.isInteger(index) &&
-        index >= 0 &&
-        index < state.gameType &&
-        indexes.indexOf(index) === arrayIndex
-      ))
+  function satIds() {
+    return validPlayerIds(Array.isArray(state.roles.satIds) ? state.roles.satIds : []);
+  }
+
+  function fixedSatIds() {
+    return validPlayerIds(Array.isArray(state.fixedSatIds) ? state.fixedSatIds : [])
       .slice(0, sittingPlayerCount());
   }
 
   function isFixedSat(index) {
-    return fixedSatIndexes().includes(index);
+    const id = playerIdAt(index);
+    return id !== null && fixedSatIds().includes(id);
   }
 
-  function storeSatIndexes(indexes) {
+  function storeSatIds(ids) {
     const sittingCount = sittingPlayerCount();
-    const limited = indexes.slice(0, sittingCount);
-    if (sittingCount === 0) {
-      state.roles.sat = null;
-    } else if (sittingCount === 1) {
-      state.roles.sat = limited.length ? limited[0] : null;
-    } else {
-      state.roles.sat = limited;
-    }
+    state.roles.satIds = validPlayerIds(ids).slice(0, sittingCount);
   }
 
   function isSatOut(index) {
-    return satIndexes().includes(index);
+    const id = playerIdAt(index);
+    return id !== null && satIds().includes(id);
   }
 
-  function nextAvailableSatIndex(index, reserved) {
-    let next = index;
+  function nextAvailableSatId(id, reserved) {
+    let next = playerIndexById(id);
+    if (next < 0) {
+      return null;
+    }
     for (let step = 0; step < state.gameType; step++) {
       next = (next + 1) % state.gameType;
-      if (!isFixedSat(next) && !reserved.includes(next)) {
-        return next;
+      const nextId = playerIdAt(next);
+      if (nextId && !fixedSatIds().includes(nextId) && !reserved.includes(nextId)) {
+        return nextId;
       }
     }
     return null;
@@ -449,34 +486,34 @@
 
   function normalizeSatRoles() {
     const sittingCount = sittingPlayerCount();
-    const fixed = fixedSatIndexes();
-    state.fixedSats = fixed;
-    if (fixed.includes(state.roles.picker)) {
-      state.roles.picker = null;
+    const fixed = fixedSatIds();
+    state.fixedSatIds = fixed;
+    if (fixed.includes(state.roles.pickerId)) {
+      state.roles.pickerId = null;
     }
-    if (fixed.includes(state.roles.partner)) {
-      state.roles.partner = null;
+    if (fixed.includes(state.roles.partnerId)) {
+      state.roles.partnerId = null;
     }
     if (state.handed === 3) {
-      state.roles.partner = null;
+      state.roles.partnerId = null;
     }
 
     if (sittingCount === 0) {
-      storeSatIndexes([]);
+      storeSatIds([]);
       return;
     }
 
     const nextSats = fixed.slice();
-    const currentFloatingSats = satIndexes().filter(index => !fixed.includes(index));
+    const currentFloatingSats = satIds().filter(id => !fixed.includes(id));
 
     for (let i = 0; i < currentFloatingSats.length && nextSats.length < sittingCount; i++) {
-      const index = currentFloatingSats[i];
-      if (!nextSats.includes(index)) {
-        nextSats.push(index);
+      const id = currentFloatingSats[i];
+      if (!nextSats.includes(id)) {
+        nextSats.push(id);
       }
     }
 
-    const defaults = defaultSatIndexes().filter(index => !fixed.includes(index));
+    const defaults = defaultSatIds().filter(id => !fixed.includes(id));
     for (let i = 0; i < defaults.length && nextSats.length < sittingCount; i++) {
       if (!nextSats.includes(defaults[i])) {
         nextSats.push(defaults[i]);
@@ -484,26 +521,26 @@
     }
 
     for (let i = 0; i < state.gameType && nextSats.length < sittingCount; i++) {
-      if (!fixed.includes(i) && !nextSats.includes(i)) {
-        nextSats.push(i);
+      const id = playerIdAt(i);
+      if (id && !fixed.includes(id) && !nextSats.includes(id)) {
+        nextSats.push(id);
       }
     }
 
-    storeSatIndexes(nextSats);
+    storeSatIds(nextSats);
   }
 
   function resetRoles() {
-    const count = state.gameType;
     const sittingCount = sittingPlayerCount();
-    const fixed = fixedSatIndexes();
+    const fixed = fixedSatIds();
     let nextSats = fixed.slice();
 
     // If transitioning from previous round, rotate sitting player clockwise
     if (sittingCount > fixed.length) {
-      const currentSats = satIndexes().filter(index => !fixed.includes(index));
+      const currentSats = satIds().filter(id => !fixed.includes(id));
       if (currentSats.length === sittingCount - fixed.length) {
-        currentSats.forEach(index => {
-          const next = nextAvailableSatIndex(index, nextSats);
+        currentSats.forEach(id => {
+          const next = nextAvailableSatId(id, nextSats);
           if (next !== null) {
             nextSats.push(next);
           }
@@ -511,63 +548,103 @@
       }
     }
 
-    state.roles = { picker: null, partner: null, sat: null };
+    state.roles = { pickerId: null, partnerId: null, satIds: [] };
     if (nextSats.length < sittingCount) {
-      state.roles.sat = nextSats;
+      state.roles.satIds = nextSats;
       normalizeSatRoles();
       return;
     }
-    storeSatIndexes(nextSats);
+    storeSatIds(nextSats);
   }
 
-  function renderModalPlayerInputs(count, names) {
+  function renderModalPlayerInputs(count, players) {
     const container = document.getElementById("modalPlayerNameInputs");
+    container.className = modalMode === "settings" ? "modal-player-list" : "grid";
     container.innerHTML = "";
-    const fixed = fixedSatIndexes();
+    const fixed = fixedSatIds();
+    const modalPlayers = Array.from({ length: count }, (_, index) => normalizePlayer(players[index]));
 
     for (let i = 0; i < count; i++) {
+      const player = modalPlayers[i];
       const div = document.createElement("div");
       div.className = "modal-player-row";
-      const val = names[i] || "";
-      div.innerHTML = `
-        <div class="modal-player-label-row">
-          <label style="margin-bottom: 0;">Player ${i + 1}</label>
+      div.dataset.playerId = player.id;
+      div.draggable = modalMode === "settings";
+      div.addEventListener("dragstart", handleModalDragStart);
+      div.addEventListener("dragover", handleModalDragOver);
+      div.addEventListener("dragend", handleModalDragEnd);
+      div.addEventListener("drop", handleModalDrop);
+      const val = player.name || "";
+      div.innerHTML = modalMode === "settings" ? `
+        <div class="modal-player-main">
+          <span class="modal-player-position">${i + 1}</span>
+          ${modalMode === "settings" ? `
+            <button
+              class="reorder-handle"
+              type="button"
+              aria-label="Drag to reorder Player ${i + 1}"
+              title="Drag to reorder"
+              onpointerdown="startModalPointerReorder(event)"
+            >≡</button>
+          ` : ""}
+          <label class="modal-player-name-label">
+            <span class="modal-player-label-text">Player ${i + 1}</span>
+            <input 
+              class="modal-player-name"
+              type="text" 
+              placeholder="Player ${i + 1}" 
+              value="${escapeAttribute(val)}" 
+            />
+          </label>
+          ${modalMode === "settings" ? `
+            <div class="modal-reorder-controls">
+              <button class="btn-secondary modal-move-button" type="button" onclick="moveModalPlayerRow(this, -1)" aria-label="Move Player ${i + 1} up">↑</button>
+              <button class="btn-secondary modal-move-button" type="button" onclick="moveModalPlayerRow(this, 1)" aria-label="Move Player ${i + 1} down">↓</button>
+            </div>
+          ` : ""}
           ${modalMode === "settings" ? `
             <label class="sit-checkbox-label">
               <input 
                 class="modal-fixed-sat"
                 type="checkbox"
-                value="${i}"
+                value="${escapeAttribute(player.id)}"
                 onchange="updateModalSitCheckboxes()"
-                ${fixed.includes(i) ? "checked" : ""}
+                ${fixed.includes(player.id) ? "checked" : ""}
               />
               Skip
             </label>
           ` : ""}
         </div>
-        <input 
+      ` : `
+        <label>Player ${i + 1}</label>
+        <input
           class="modal-player-name"
-          type="text" 
-          placeholder="Player ${i + 1}" 
-          value="${escapeAttribute(val)}" 
+          type="text"
+          placeholder="Player ${i + 1}"
+          value="${escapeAttribute(val)}"
         />
       `;
       container.appendChild(div);
     }
     updateModalSitCheckboxes();
+    updateModalPlayerLabels();
   }
 
-  function getModalNames() {
-    const names = emptyPlayers();
-    document.querySelectorAll(".modal-player-name").forEach((input, index) => {
-      names[index] = input.value;
+  function getModalPlayers() {
+    const players = emptyPlayers();
+    document.querySelectorAll(".modal-player-row").forEach((row, index) => {
+      const input = row.querySelector(".modal-player-name");
+      players[index] = {
+        id: row.dataset.playerId || createId("player"),
+        name: input ? input.value : ""
+      };
     });
-    return names;
+    return players;
   }
 
   function getModalFixedSats() {
     return Array.from(document.querySelectorAll(".modal-fixed-sat:checked"))
-      .map(input => parseInt(input.value));
+      .map(input => input.value);
   }
 
   function updateModalSitCheckboxes() {
@@ -581,22 +658,128 @@
     });
   }
 
+  function updateModalPlayerLabels() {
+    document.querySelectorAll(".modal-player-row").forEach((row, index) => {
+      const position = row.querySelector(".modal-player-position");
+      const label = row.querySelector(".modal-player-label-text");
+      const input = row.querySelector(".modal-player-name");
+      const handle = row.querySelector(".reorder-handle");
+      const upButton = row.querySelector(".modal-move-button:first-child");
+      const downButton = row.querySelector(".modal-move-button:last-child");
+      if (position) position.textContent = String(index + 1);
+      if (label) label.textContent = `Player ${index + 1}`;
+      if (input) input.placeholder = `Player ${index + 1}`;
+      if (handle) handle.setAttribute("aria-label", `Drag to reorder Player ${index + 1}`);
+      if (upButton) upButton.disabled = index === 0;
+      if (downButton) downButton.disabled = index === document.querySelectorAll(".modal-player-row").length - 1;
+    });
+  }
+
+  function moveModalPlayerRow(control, direction) {
+    const row = control.closest(".modal-player-row");
+    if (!row) return;
+    const sibling = direction < 0 ? row.previousElementSibling : row.nextElementSibling;
+    if (!sibling) return;
+    if (direction < 0) {
+      row.parentElement.insertBefore(row, sibling);
+    } else {
+      row.parentElement.insertBefore(sibling, row);
+    }
+    updateModalSitCheckboxes();
+    updateModalPlayerLabels();
+  }
+
+  let draggedModalPlayerRow = null;
+
+  function handleModalDragStart(event) {
+    if (modalMode !== "settings") return;
+    draggedModalPlayerRow = event.currentTarget;
+    draggedModalPlayerRow.classList.add("dragging");
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", draggedModalPlayerRow.dataset.playerId || "");
+    }
+  }
+
+  function handleModalDragOver(event) {
+    if (!draggedModalPlayerRow || event.currentTarget === draggedModalPlayerRow) return;
+    event.preventDefault();
+    const target = event.currentTarget;
+    const rect = target.getBoundingClientRect();
+    const afterTarget = event.clientY > rect.top + rect.height / 2;
+    target.parentElement.insertBefore(draggedModalPlayerRow, afterTarget ? target.nextSibling : target);
+    updateModalPlayerLabels();
+  }
+
+  function handleModalDrop(event) {
+    if (draggedModalPlayerRow) {
+      event.preventDefault();
+    }
+  }
+
+  function handleModalDragEnd() {
+    if (draggedModalPlayerRow) {
+      draggedModalPlayerRow.classList.remove("dragging");
+      draggedModalPlayerRow = null;
+      updateModalSitCheckboxes();
+      updateModalPlayerLabels();
+    }
+  }
+
+  function startModalPointerReorder(event) {
+    if (modalMode !== "settings") return;
+    const row = event.currentTarget.closest(".modal-player-row");
+    if (!row) return;
+    event.preventDefault();
+    draggedModalPlayerRow = row;
+    row.classList.add("dragging");
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    const move = moveEvent => {
+      const rows = Array.from(document.querySelectorAll(".modal-player-row"))
+        .filter(candidate => candidate !== row);
+      const target = rows.find(candidate => {
+        const rect = candidate.getBoundingClientRect();
+        return moveEvent.clientY >= rect.top && moveEvent.clientY <= rect.bottom;
+      });
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      const afterTarget = moveEvent.clientY > rect.top + rect.height / 2;
+      target.parentElement.insertBefore(row, afterTarget ? target.nextSibling : target);
+      updateModalPlayerLabels();
+    };
+
+    const stop = () => {
+      row.classList.remove("dragging");
+      draggedModalPlayerRow = null;
+      updateModalSitCheckboxes();
+      updateModalPlayerLabels();
+      document.removeEventListener("pointermove", move);
+      document.removeEventListener("pointerup", stop);
+      document.removeEventListener("pointercancel", stop);
+    };
+
+    document.addEventListener("pointermove", move);
+    document.addEventListener("pointerup", stop);
+    document.addEventListener("pointercancel", stop);
+  }
+
   function handleModalGameTypeChange() {
     const mode = parseGameModeValue(document.getElementById("modalGameType").value);
-    renderModalPlayerInputs(mode.gameType, getModalNames());
+    renderModalPlayerInputs(mode.gameType, getModalPlayers());
   }
 
   function saveModal(event) {
     event.preventDefault();
-    const names = getModalNames();
+    const modalPlayers = getModalPlayers();
 
     if (modalMode === "new") {
       const mode = parseGameModeValue(document.getElementById("modalGameType").value);
       const newGame = createGame({
         handed: mode.handed,
         gameType: mode.gameType,
-        players: names,
-        roles: { picker: null, partner: null, sat: null },
+        players: modalPlayers,
+        roles: { pickerId: null, partnerId: null, satIds: [] },
         doubleOnBump: document.getElementById("doubleOnBumpCheckbox").checked,
         noTrickPartnerDoesntLose: document.getElementById("noTrickPartnerCheckbox").checked
       });
@@ -608,17 +791,15 @@
       }
       appData.activeGameId = newGame.id;
       state = newGame;
-      storeSatIndexes(defaultSatIndexes());
+      storeSatIds(defaultSatIds());
     } else if (modalMode === "settings") {
-      for (let i = 0; i < state.gameType; i++) {
-        state.players[i] = names[i];
+      state.players = modalPlayers;
+      state.fixedSatIds = getModalFixedSats();
+      if (fixedSatIds().includes(state.roles.pickerId)) {
+        state.roles.pickerId = null;
       }
-      state.fixedSats = getModalFixedSats();
-      if (isFixedSat(state.roles.picker)) {
-        state.roles.picker = null;
-      }
-      if (isFixedSat(state.roles.partner)) {
-        state.roles.partner = null;
+      if (fixedSatIds().includes(state.roles.partnerId)) {
+        state.roles.partnerId = null;
       }
       state.doubleOnBump = document.getElementById("doubleOnBumpCheckbox").checked;
       state.noTrickPartnerDoesntLose = document.getElementById("noTrickPartnerCheckbox").checked;
@@ -633,7 +814,7 @@
   }
 
   function isHandReadyToSubmit() {
-    return state.roles.picker !== null && satIndexes().length === sittingPlayerCount();
+    return state.roles.pickerId !== null && satIds().length === sittingPlayerCount();
   }
 
   function updateSubmitButton() {
@@ -661,40 +842,44 @@
     if (isFixedSat(index)) {
       return;
     }
+    const playerId = playerIdAt(index);
+    if (!playerId) {
+      return;
+    }
 
     const sittingCount = sittingPlayerCount();
     const hasPartner = state.handed === 5;
 
-    if (state.roles.picker === index) {
-      state.roles.picker = null;
+    if (state.roles.pickerId === playerId) {
+      state.roles.pickerId = null;
       if (hasPartner) {
-        if (state.roles.partner !== null) state.roles.partner = null;
-        state.roles.partner = index;
-      } else if (sittingCount > 0 && satIndexes().length < sittingCount) {
-        const sats = satIndexes();
-        sats.push(index);
-        storeSatIndexes(sats);
+        if (state.roles.partnerId !== null) state.roles.partnerId = null;
+        state.roles.partnerId = playerId;
+      } else if (sittingCount > 0 && satIds().length < sittingCount) {
+        const sats = satIds();
+        sats.push(playerId);
+        storeSatIds(sats);
       }
-    } else if (state.roles.partner === index) {
-      state.roles.partner = null;
+    } else if (state.roles.partnerId === playerId) {
+      state.roles.partnerId = null;
       if (sittingCount > 0) {
-        const sats = satIndexes().filter(satIndex => satIndex !== index);
+        const sats = satIds().filter(satId => satId !== playerId);
         if (sats.length < sittingCount) {
-          sats.push(index);
-          storeSatIndexes(sats);
+          sats.push(playerId);
+          storeSatIds(sats);
         }
       }
     } else if (isSatOut(index)) {
-      storeSatIndexes(satIndexes().filter(satIndex => satIndex !== index));
+      storeSatIds(satIds().filter(satId => satId !== playerId));
     } else {
-      if (state.roles.picker === null) {
-        state.roles.picker = index;
-      } else if (hasPartner && state.roles.partner === null) {
-        state.roles.partner = index;
-      } else if (sittingCount > 0 && satIndexes().length < sittingCount) {
-        const sats = satIndexes();
-        sats.push(index);
-        storeSatIndexes(sats);
+      if (state.roles.pickerId === null) {
+        state.roles.pickerId = playerId;
+      } else if (hasPartner && state.roles.partnerId === null) {
+        state.roles.partnerId = playerId;
+      } else if (sittingCount > 0 && satIds().length < sittingCount) {
+        const sats = satIds();
+        sats.push(playerId);
+        storeSatIds(sats);
       }
     }
 
@@ -704,15 +889,15 @@
 
   function openEditHandModal(historyIndex) {
     const hand = state.history[historyIndex];
-    if (!hand || hand.picker === undefined) {
+    if (!hand || hand.pickerId === undefined) {
       return;
     }
 
     editHandIndex = historyIndex;
     editHandDraft = {
-      picker: hand.picker,
-      partner: state.handed === 5 && hand.partner !== undefined ? hand.partner : null,
-      sats: Array.isArray(hand.sats) ? hand.sats.slice() : [],
+      pickerId: hand.pickerId,
+      partnerId: state.handed === 5 && hand.partnerId !== undefined ? hand.partnerId : null,
+      satIds: Array.isArray(hand.satIds) ? hand.satIds.slice() : [],
       outcome: hand.outcome || "win",
       multiplier: hand.multiplier || 1
     };
@@ -732,52 +917,57 @@
   }
 
   function editDraftHasSat(index) {
-    return editHandDraft.sats.includes(index);
+    const playerId = playerIdAt(index);
+    return playerId !== null && editHandDraft.satIds.includes(playerId);
   }
 
-  function storeEditDraftSats(sats) {
-    editHandDraft.sats = sats.slice(0, sittingPlayerCount());
+  function storeEditDraftSats(ids) {
+    editHandDraft.satIds = validPlayerIds(ids).slice(0, sittingPlayerCount());
   }
 
   function handleEditCardTap(index) {
     if (!editHandDraft) {
       return;
     }
+    const playerId = playerIdAt(index);
+    if (!playerId) {
+      return;
+    }
 
     const sittingCount = sittingPlayerCount();
     const hasPartner = state.handed === 5;
 
-    if (editHandDraft.picker === index) {
-      editHandDraft.picker = null;
+    if (editHandDraft.pickerId === playerId) {
+      editHandDraft.pickerId = null;
       if (hasPartner) {
-        if (editHandDraft.partner !== null) editHandDraft.partner = null;
-        editHandDraft.partner = index;
-      } else if (sittingCount > 0 && editHandDraft.sats.length < sittingCount) {
-        editHandDraft.sats.push(index);
+        if (editHandDraft.partnerId !== null) editHandDraft.partnerId = null;
+        editHandDraft.partnerId = playerId;
+      } else if (sittingCount > 0 && editHandDraft.satIds.length < sittingCount) {
+        editHandDraft.satIds.push(playerId);
       }
-    } else if (editHandDraft.partner === index) {
-      editHandDraft.partner = null;
+    } else if (editHandDraft.partnerId === playerId) {
+      editHandDraft.partnerId = null;
       if (sittingCount > 0) {
-        const sats = editHandDraft.sats.filter(satIndex => satIndex !== index);
+        const sats = editHandDraft.satIds.filter(satId => satId !== playerId);
         if (sats.length < sittingCount) {
-          sats.push(index);
+          sats.push(playerId);
         }
         storeEditDraftSats(sats);
       }
     } else if (editDraftHasSat(index)) {
-      storeEditDraftSats(editHandDraft.sats.filter(satIndex => satIndex !== index));
+      storeEditDraftSats(editHandDraft.satIds.filter(satId => satId !== playerId));
     } else {
-      if (editHandDraft.picker === null) {
-        editHandDraft.picker = index;
-      } else if (hasPartner && editHandDraft.partner === null) {
-        editHandDraft.partner = index;
-      } else if (sittingCount > 0 && editHandDraft.sats.length < sittingCount) {
-        editHandDraft.sats.push(index);
+      if (editHandDraft.pickerId === null) {
+        editHandDraft.pickerId = playerId;
+      } else if (hasPartner && editHandDraft.partnerId === null) {
+        editHandDraft.partnerId = playerId;
+      } else if (sittingCount > 0 && editHandDraft.satIds.length < sittingCount) {
+        editHandDraft.satIds.push(playerId);
       }
     }
 
     if (state.handed === 3) {
-      editHandDraft.partner = null;
+      editHandDraft.partnerId = null;
     }
     renderEditHandPlayers();
   }
@@ -793,10 +983,11 @@
       let cardClass = "";
       let badgeHtml = "";
 
-      if (editHandDraft.picker === i) {
+      const playerId = playerIdAt(i);
+      if (editHandDraft.pickerId === playerId) {
         cardClass = "picker";
         badgeHtml = `<div class="role-badge badge-picker">Picker</div>`;
-      } else if (editHandDraft.partner === i) {
+      } else if (editHandDraft.partnerId === playerId) {
         cardClass = "partner";
         badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
       } else if (editDraftHasSat(i)) {
@@ -814,24 +1005,24 @@
     }
 
     document.getElementById("saveEditHandButton").disabled =
-      editHandDraft.picker === null || editHandDraft.sats.length !== sittingPlayerCount();
+      editHandDraft.pickerId === null || editHandDraft.satIds.length !== sittingPlayerCount();
   }
 
   function saveEditedHand(event) {
     event.preventDefault();
-    if (!editHandDraft || editHandDraft.picker === null || editHandDraft.sats.length !== sittingPlayerCount()) {
+    if (!editHandDraft || editHandDraft.pickerId === null || editHandDraft.satIds.length !== sittingPlayerCount()) {
       return;
     }
 
     const hand = state.history[editHandIndex];
     const outcome = document.getElementById("editOutcomeSelect").value;
     const multiplier = parseInt(document.getElementById("editMultiplierSelect").value);
-    const partner = state.handed === 5 && editHandDraft.partner !== null ? editHandDraft.partner : null;
-    const sats = editHandDraft.sats.slice();
+    const partnerId = state.handed === 5 && editHandDraft.partnerId !== null ? editHandDraft.partnerId : null;
+    const satIdsForHand = editHandDraft.satIds.slice();
     const deltas = calculateHand({
-      picker: editHandDraft.picker,
-      partner,
-      sats,
+      picker: editHandDraft.pickerId,
+      partner: partnerId,
+      sats: satIdsForHand,
       outcome,
       multiplier,
       gameSettings: state
@@ -839,9 +1030,9 @@
 
     state.history[editHandIndex] = {
       ...hand,
-      picker: editHandDraft.picker,
-      partner,
-      sats,
+      pickerId: editHandDraft.pickerId,
+      partnerId,
+      satIds: satIdsForHand,
       outcome,
       multiplier,
       deltas
@@ -857,18 +1048,17 @@
       return;
     }
 
-    const count = state.gameType;
-    const pickerIdx = state.roles.picker;
-    const partnerIdx = state.roles.partner;
-    const sats = satIndexes();
+    const pickerId = state.roles.pickerId;
+    const partnerId = state.roles.partnerId;
+    const currentSatIds = satIds();
 
     const outcome = document.getElementById("outcomeSelect").value;
     const mult = parseInt(document.getElementById("multiplierSelect").value);
-    const effectivePartner = state.handed === 5 && partnerIdx !== null ? partnerIdx : null;
+    const effectivePartnerId = state.handed === 5 && partnerId !== null ? partnerId : null;
     const deltas = calculateHand({
-      picker: pickerIdx,
-      partner: effectivePartner,
-      sats,
+      picker: pickerId,
+      partner: effectivePartnerId,
+      sats: currentSatIds,
       outcome,
       multiplier: mult,
       gameSettings: state
@@ -877,9 +1067,9 @@
     state.history.push({
       id: createId("hand"),
       deltas,
-      picker: pickerIdx,
-      partner: effectivePartner,
-      sats,
+      pickerId,
+      partnerId: effectivePartnerId,
+      satIds: currentSatIds,
       outcome,
       multiplier: mult
     });
@@ -894,19 +1084,24 @@
   }
 
   function getDisplayName(index) {
-    return state.players[index] && state.players[index].trim() !== "" 
-      ? state.players[index] 
+    const player = playerAt(index);
+    return player && player.name.trim() !== "" 
+      ? player.name 
       : `Player ${index + 1}`;
   }
 
   function updateStandings() {
     const count = state.gameType;
-    const totals = new Array(count).fill(0);
+    const players = activePlayers();
+    const totals = {};
+    players.forEach(player => {
+      totals[player.id] = 0;
+    });
     updateRoleInstruction();
 
     state.history.forEach(hand => {
-      hand.deltas.forEach((d, idx) => {
-        if (idx < count) totals[idx] += d;
+      players.forEach(player => {
+        totals[player.id] += hand.deltas[player.id] || 0;
       });
     });
 
@@ -916,16 +1111,17 @@
     totalsGrid.style.setProperty("--player-count", count);
     totalsGrid.innerHTML = "";
     for (let i = 0; i < count; i++) {
-      const val = totals[i];
+      const playerId = playerIdAt(i);
+      const val = totals[playerId] || 0;
       const cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
       
       let cardClass = "";
       let badgeHtml = "";
 
-      if (state.roles.picker === i) {
+      if (state.roles.pickerId === playerId) {
         cardClass = "picker";
         badgeHtml = `<div class="role-badge badge-picker">Picker</div>`;
-      } else if (state.roles.partner === i) {
+      } else if (state.roles.partnerId === playerId) {
         cardClass = "partner";
         badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
       } else if (isSatOut(i)) {
@@ -958,16 +1154,19 @@
     historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hands" : "Show Totals";
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
-    const runningTotals = new Array(count).fill(0);
+    const runningTotals = {};
+    players.forEach(player => {
+      runningTotals[player.id] = 0;
+    });
     const historyRows = state.history.map((hand, hIdx) => {
-      hand.deltas.forEach((delta, index) => {
-        if (index < count) runningTotals[index] += delta;
+      players.forEach(player => {
+        runningTotals[player.id] += hand.deltas[player.id] || 0;
       });
 
       return {
         hand,
         handNumber: hIdx + 1,
-        totals: runningTotals.slice()
+        totals: { ...runningTotals }
       };
     });
     if (state.historyNewestFirst) {
@@ -977,11 +1176,12 @@
     historyRows.forEach(({ hand, handNumber, totals }) => {
       let tr = `<tr><td><button class="inline-button" type="button" onclick="openEditHandModal(${handNumber - 1})">${handNumber}</button></td>`;
       for (let i = 0; i < count; i++) {
-        let val = state.historyShowTotals ? totals[i] : hand.deltas[i] || 0;
+        const playerId = playerIdAt(i);
+        let val = state.historyShowTotals ? totals[playerId] || 0 : hand.deltas[playerId] || 0;
         let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
-        if (hand.picker === i) {
+        if (hand.pickerId === playerId) {
           cls += " history-picker-cell";
-        } else if (hand.partner === i) {
+        } else if (hand.partnerId === playerId) {
           cls += " history-partner-cell";
         }
         tr += `<td class="${cls}">${val > 0 ? '+' : ''}${val}</td>`;
