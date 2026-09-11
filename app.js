@@ -80,6 +80,10 @@
     return handed === 3 ? 3 : 5;
   }
 
+  function maxPlayerCountForHanded(handed) {
+    return validPlayerCountsForHanded(handed).at(-1);
+  }
+
   function normalizePlayerCountForHanded(handed, count) {
     const parsed = parseInt(count);
     const validCounts = validPlayerCountsForHanded(handed);
@@ -265,6 +269,7 @@
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("modalHanded").value = String(state.handed);
     const playerCount = populateModalPlayerCountOptions(state.handed, defaultPlayerCountForHanded(state.handed));
+    document.getElementById("addPlayerButton").hidden = true;
     document.getElementById("doubleOnBumpCheckbox").checked = true;
     document.getElementById("noTrickPartnerCheckbox").checked = true;
     modalPlayerDrafts = emptyPlayers();
@@ -280,6 +285,7 @@
     document.getElementById("modalCancelButton").hidden = false;
     document.getElementById("modalGameTypeField").hidden = true;
     document.getElementById("modalRuleSettings").hidden = false;
+    document.getElementById("addPlayerButton").hidden = false;
     updateRuleSettingsInputs();
     modalPlayerDrafts = state.players.map(normalizePlayer);
     renderModalPlayerInputs(state.playerCount, state.players);
@@ -654,6 +660,11 @@
     }
     updateModalSitCheckboxes();
     updateModalPlayerLabels();
+    updateAddPlayerButton();
+  }
+
+  function getModalPlayerCount() {
+    return document.querySelectorAll(".modal-player-row").length;
   }
 
   function getModalPlayers() {
@@ -666,6 +677,33 @@
       };
     });
     return players;
+  }
+
+  function updateAddPlayerButton() {
+    const button = document.getElementById("addPlayerButton");
+    if (!button) return;
+    if (modalMode !== "settings") {
+      button.hidden = true;
+      return;
+    }
+    const atMax = getModalPlayerCount() >= maxPlayerCountForHanded(state.handed);
+    button.hidden = atMax;
+    button.disabled = atMax;
+  }
+
+  function addModalPlayer() {
+    if (modalMode !== "settings") {
+      return;
+    }
+    const count = getModalPlayerCount();
+    const maxCount = maxPlayerCountForHanded(state.handed);
+    if (count >= maxCount) {
+      updateAddPlayerButton();
+      return;
+    }
+    const players = getModalPlayers();
+    players[count] = createPlayer();
+    renderModalPlayerInputs(count + 1, players);
   }
 
   function getModalFixedSats() {
@@ -715,6 +753,7 @@
     const afterTarget = event.clientY > rect.top + rect.height / 2;
     target.parentElement.insertBefore(draggedModalPlayerRow, afterTarget ? target.nextSibling : target);
     updateModalPlayerLabels();
+    updateAddPlayerButton();
   }
 
   function handleModalDrop(event) {
@@ -760,6 +799,7 @@
       draggedModalPlayerRow = null;
       updateModalSitCheckboxes();
       updateModalPlayerLabels();
+      updateAddPlayerButton();
       document.removeEventListener("pointermove", move);
       document.removeEventListener("pointerup", stop);
       document.removeEventListener("pointercancel", stop);
@@ -806,8 +846,22 @@
       state = newGame;
       storeSatIds(defaultSatIds());
     } else if (modalMode === "settings") {
+      const previousPlayerIds = activePlayerIds();
+      const previousSittingCount = sittingPlayerCount();
+      const previousSatIds = satIds();
+      const nextPlayerCount = getModalPlayerCount();
+      const nextActivePlayers = modalPlayers.slice(0, nextPlayerCount);
+      const addedPlayerIds = nextActivePlayers
+        .map(player => player.id)
+        .filter(id => !previousPlayerIds.includes(id));
       state.players = modalPlayers;
+      state.playerCount = nextPlayerCount;
       state.fixedSatIds = getModalFixedSats();
+      const nextSittingCount = sittingPlayerCount();
+      const addedSittingSlots = Math.max(0, nextSittingCount - previousSittingCount);
+      if (addedSittingSlots > 0 && addedPlayerIds.length > 0) {
+        storeSatIds(previousSatIds.concat(addedPlayerIds.slice(0, addedSittingSlots)));
+      }
       if (fixedSatIds().includes(state.roles.pickerId)) {
         state.roles.pickerId = null;
       }
