@@ -204,6 +204,17 @@
       color: var(--text);
       border: 1px solid var(--border);
     }
+    .inline-button {
+      width: auto;
+      margin: 0;
+      padding: 6px 9px;
+      background: var(--field-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .inline-button:hover {
+      border-color: var(--accent);
+    }
 
     .modal-backdrop {
       position: fixed;
@@ -375,6 +386,9 @@
       background: rgba(120, 144, 156, 0.2);
       opacity: 0.6;
     }
+    .total-card.invalid {
+      opacity: 0.45;
+    }
     .role-badge {
       font-size: 0.65rem;
       font-weight: bold;
@@ -478,6 +492,10 @@
       width: min(100%, 260px);
       margin-left: auto;
       margin-right: auto;
+    }
+    .edit-section-label {
+      margin: 14px 0 8px;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -628,42 +646,145 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="editHandModal" hidden>
+  <form class="modal" onsubmit="saveEditedHand(event)">
+    <h2 id="editHandTitle">Edit Hand</h2>
+    <label class="edit-section-label">Players</label>
+    <div class="totals-grid" id="editHandPlayersGrid"></div>
+    <label class="edit-section-label">Hand Outcome</label>
+    <select id="editOutcomeSelect"></select>
+    <label class="edit-section-label">Multipliers</label>
+    <select id="editMultiplierSelect">
+      <option value="1">1x (Standard)</option>
+      <option value="2">2x (Crack / Doubler)</option>
+      <option value="4">4x (Re-Crack / Blitz)</option>
+      <option value="8">8x</option>
+      <option value="16">16x</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn-secondary" type="button" onclick="closeEditHandModal()">Cancel</button>
+      <button type="submit" id="saveEditHandButton">Save Changes</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal-backdrop" id="compatibilityModal" hidden>
+  <div class="modal">
+    <h2>Storage Updated</h2>
+    <div class="about-content">
+      <p>This update changes how saved games are stored. Existing game data from the previous version cannot be used and has been cleared.</p>
+    </div>
+    <div class="modal-actions single-action">
+      <button type="button" onclick="startAfterCompatibilityReset()">Start New Game</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="saveErrorModal" hidden>
+  <div class="modal">
+    <h2>Save Failed</h2>
+    <div class="about-content">
+      <p id="saveErrorMessage">Unable to save changes in this browser.</p>
+    </div>
+    <div class="modal-actions single-action">
+      <button type="button" onclick="closeSaveErrorModal()">OK</button>
+    </div>
+  </div>
+</div>
+
 <script src="version.js"></script>
 <script>
   const STORAGE_KEY = "sheepshead_scorekeeper_data";
   const APP_VERSION = self.SHEEPSHEAD_APP_VERSION;
+  const DATA_VERSION = 2;
   const MAX_PLAYERS = 7;
 
-  let state = {
-    handed: 5,
-    gameType: 6,
-    players: ["", "", "", "", "", "", ""],
-    roles: { picker: null, partner: null, sat: null },
-    fixedSats: [],
-    historyNewestFirst: false,
-    historyShowTotals: false,
-    doubleOnBump: true,
-    noTrickPartnerDoesntLose: true,
-    theme: "dark",
-    history: []
-  };
+  let appData = null;
+  let state = null;
   let modalMode = null;
+  let editHandIndex = null;
+  let editHandDraft = null;
+  let shouldShowCompatibilityNotice = false;
+
+  function createId(prefix) {
+    const id = crypto && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return `${prefix}-${id}`;
+  }
+
+  function nowIso() {
+    return new Date().toISOString();
+  }
+
+  function emptyPlayers() {
+    return new Array(MAX_PLAYERS).fill("");
+  }
+
+  function createGame(overrides = {}) {
+    const timestamp = nowIso();
+    return {
+      id: createId("game"),
+      name: "Game",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      handed: 5,
+      gameType: 6,
+      players: emptyPlayers(),
+      fixedSats: [],
+      doubleOnBump: true,
+      noTrickPartnerDoesntLose: true,
+      roles: { picker: null, partner: null, sat: 5 },
+      history: [],
+      ...overrides
+    };
+  }
+
+  function createAppData(theme = "dark") {
+    const game = createGame();
+    return {
+      dataVersion: DATA_VERSION,
+      preferences: { theme },
+      games: [game],
+      activeGameId: game.id
+    };
+  }
+
+  function getActiveGame() {
+    return appData.games.find(game => game.id === appData.activeGameId) || appData.games[0];
+  }
 
   function loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
+    const hadSavedData = saved !== null;
+    let parsed = null;
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        state = { ...state, ...parsed };
+        parsed = JSON.parse(saved);
       } catch (e) {
         console.error("Could not parse saved game state", e);
       }
+    }
+    if (!parsed || parsed.dataVersion !== DATA_VERSION || !Array.isArray(parsed.games)) {
+      const recoveredTheme = parsed && parsed.theme === "light" ? "light" : "dark";
+      appData = createAppData(recoveredTheme);
+      state = getActiveGame();
+      shouldShowCompatibilityNotice = hadSavedData;
+      saveState();
+    } else {
+      appData = parsed;
+      appData.preferences = appData.preferences || {};
+      appData.preferences.theme = appData.preferences.theme === "light" ? "light" : "dark";
+      appData.games = appData.games.length ? appData.games : [createGame()];
+      appData.activeGameId = appData.games.some(game => game.id === appData.activeGameId)
+        ? appData.activeGameId
+        : appData.games[0].id;
+      state = getActiveGame();
     }
     state.handed = [3, 5].includes(parseInt(state.handed)) ? parseInt(state.handed) : 5;
     state.gameType = [3, 4, 5, 6, 7].includes(parseInt(state.gameType)) ? parseInt(state.gameType) : 6;
     state.doubleOnBump = state.doubleOnBump !== false;
     state.noTrickPartnerDoesntLose = state.noTrickPartnerDoesntLose !== false;
-    state.theme = state.theme === "light" ? "light" : "dark";
     if (state.gameType < state.handed || state.gameType > state.handed + 2) {
       state.handed = state.gameType <= 4 ? 3 : 5;
     }
@@ -674,6 +795,8 @@
     if (!state.roles) {
       state.roles = { picker: null, partner: null, sat: null };
     }
+    state.history = Array.isArray(state.history) ? state.history : [];
+    state.fixedSats = Array.isArray(state.fixedSats) ? state.fixedSats : [];
     state.fixedSats = fixedSatIndexes();
 
     normalizeSatRoles();
@@ -681,13 +804,25 @@
     updateOutcomeOptions();
   }
 
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  function saveState(options = {}) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      return true;
+    } catch (error) {
+      console.error("Could not save game state", error);
+      if (!options.suppressError) {
+        showSaveError();
+      }
+      return false;
+    }
   }
 
   function initGame() {
     loadState();
     updateStandings();
+    if (shouldShowCompatibilityNotice) {
+      document.getElementById("compatibilityModal").hidden = false;
+    }
   }
 
   function toggleMenu() {
@@ -777,6 +912,21 @@
     document.getElementById("aboutModal").hidden = true;
   }
 
+  function startAfterCompatibilityReset() {
+    document.getElementById("compatibilityModal").hidden = true;
+    openNewGameModal();
+  }
+
+  function showSaveError() {
+    document.getElementById("saveErrorMessage").textContent =
+      "Unable to save changes in this browser. Recent changes may be lost if you close or reload the app.";
+    document.getElementById("saveErrorModal").hidden = false;
+  }
+
+  function closeSaveErrorModal() {
+    document.getElementById("saveErrorModal").hidden = true;
+  }
+
   function confirmUndoLastHand() {
     if (state.history.length === 0) {
       closeUndoModal();
@@ -784,22 +934,23 @@
     }
 
     state.history.pop();
+    state.updatedAt = nowIso();
     closeUndoModal();
     saveState();
     updateStandings();
   }
 
   function applyTheme() {
-    document.documentElement.dataset.theme = state.theme;
+    document.documentElement.dataset.theme = appData.preferences.theme;
   }
 
   function updateThemeToggle() {
-    document.getElementById("themeToggle").checked = state.theme === "light";
-    document.getElementById("themeToggleText").textContent = state.theme === "light" ? "Light mode" : "Dark mode";
+    document.getElementById("themeToggle").checked = appData.preferences.theme === "light";
+    document.getElementById("themeToggleText").textContent = appData.preferences.theme === "light" ? "Light mode" : "Dark mode";
   }
 
   function toggleTheme(useLightTheme) {
-    state.theme = useLightTheme ? "light" : "dark";
+    appData.preferences.theme = useLightTheme ? "light" : "dark";
     applyTheme();
     updateThemeToggle();
     saveState();
@@ -831,16 +982,67 @@
       `Loss - No Tricks Taken (${noTrickPicker} / ${noTrickPartner})`;
   }
 
+  function calculateHand({ picker, partner, sats, outcome, multiplier, gameSettings }) {
+    const count = gameSettings.gameType;
+    const deltas = new Array(count).fill(0);
+    const bumpFactor = gameSettings.doubleOnBump ? 2 : 1;
+    let basePicker = 2, basePartner = 1, baseDef = -1;
+
+    switch (outcome) {
+      case "schneider":
+        basePicker = 4; basePartner = 2; baseDef = -2;
+        break;
+      case "schwarz":
+        basePicker = 6; basePartner = 3; baseDef = -3;
+        break;
+      case "loss":
+        basePicker = -2 * bumpFactor; basePartner = -1 * bumpFactor; baseDef = 1 * bumpFactor;
+        break;
+      case "schneider-loss":
+        basePicker = -4 * bumpFactor; basePartner = -2 * bumpFactor; baseDef = 2 * bumpFactor;
+        break;
+      case "schwarz-loss":
+        basePicker = -6 * bumpFactor; basePartner = -3 * bumpFactor; baseDef = 3 * bumpFactor;
+        break;
+    }
+
+    const pPts = basePicker * multiplier;
+    const ptPts = basePartner * multiplier;
+    const defPts = baseDef * multiplier;
+
+    if (gameSettings.handed === 3 || partner === null) {
+      let pickerTotal = 0;
+      for (let i = 0; i < count; i++) {
+        if (i !== picker && !sats.includes(i)) {
+          deltas[i] = defPts;
+          pickerTotal -= defPts;
+        }
+      }
+      deltas[picker] = pickerTotal;
+    } else {
+      deltas[picker] = pPts;
+      deltas[partner] = outcome === "schwarz-loss" && gameSettings.noTrickPartnerDoesntLose ? 0 : ptPts;
+      for (let i = 0; i < count; i++) {
+        if (i !== picker && i !== partner && !sats.includes(i)) {
+          deltas[i] = defPts;
+        }
+      }
+      if (outcome === "schwarz-loss" && gameSettings.noTrickPartnerDoesntLose) {
+        deltas[picker] = 0 - deltas.reduce((sum, delta, index) => (
+          index === picker ? sum : sum + delta
+        ), 0);
+      }
+    }
+
+    return deltas;
+  }
+
   function escapeAttribute(value) {
     return String(value || "")
       .replace(/&/g, "&amp;")
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
-  }
-
-  function emptyPlayers() {
-    return new Array(MAX_PLAYERS).fill("");
   }
 
   function sittingPlayerCount() {
@@ -1055,14 +1257,22 @@
 
     if (modalMode === "new") {
       const mode = parseGameModeValue(document.getElementById("modalGameType").value);
-      state.handed = mode.handed;
-      state.gameType = mode.gameType;
-      state.players = names;
-      state.history = [];
-      state.roles = { picker: null, partner: null, sat: null };
-      state.fixedSats = [];
-      state.doubleOnBump = document.getElementById("doubleOnBumpCheckbox").checked;
-      state.noTrickPartnerDoesntLose = document.getElementById("noTrickPartnerCheckbox").checked;
+      const newGame = createGame({
+        handed: mode.handed,
+        gameType: mode.gameType,
+        players: names,
+        roles: { picker: null, partner: null, sat: null },
+        doubleOnBump: document.getElementById("doubleOnBumpCheckbox").checked,
+        noTrickPartnerDoesntLose: document.getElementById("noTrickPartnerCheckbox").checked
+      });
+      const activeIndex = appData.games.findIndex(game => game.id === appData.activeGameId);
+      if (activeIndex >= 0) {
+        appData.games[activeIndex] = newGame;
+      } else {
+        appData.games.push(newGame);
+      }
+      appData.activeGameId = newGame.id;
+      state = newGame;
       storeSatIndexes(defaultSatIndexes());
     } else if (modalMode === "settings") {
       for (let i = 0; i < state.gameType; i++) {
@@ -1079,6 +1289,7 @@
       state.noTrickPartnerDoesntLose = document.getElementById("noTrickPartnerCheckbox").checked;
       normalizeSatRoles();
     }
+    state.updatedAt = nowIso();
 
     closeModal();
     saveState();
@@ -1156,6 +1367,156 @@
     updateStandings();
   }
 
+  function openEditHandModal(historyIndex) {
+    const hand = state.history[historyIndex];
+    if (!hand || hand.picker === undefined) {
+      return;
+    }
+
+    editHandIndex = historyIndex;
+    editHandDraft = {
+      picker: hand.picker,
+      partner: state.handed === 5 && hand.partner !== undefined ? hand.partner : null,
+      sats: Array.isArray(hand.sats) ? hand.sats.slice() : [],
+      outcome: hand.outcome || "win",
+      multiplier: hand.multiplier || 1
+    };
+
+    document.getElementById("editHandTitle").textContent = `Edit Hand #${historyIndex + 1}`;
+    document.getElementById("editOutcomeSelect").innerHTML = document.getElementById("outcomeSelect").innerHTML;
+    document.getElementById("editOutcomeSelect").value = editHandDraft.outcome;
+    document.getElementById("editMultiplierSelect").value = String(editHandDraft.multiplier);
+    renderEditHandPlayers();
+    document.getElementById("editHandModal").hidden = false;
+  }
+
+  function closeEditHandModal() {
+    editHandIndex = null;
+    editHandDraft = null;
+    document.getElementById("editHandModal").hidden = true;
+  }
+
+  function editDraftHasSat(index) {
+    return editHandDraft.sats.includes(index);
+  }
+
+  function storeEditDraftSats(sats) {
+    editHandDraft.sats = sats.slice(0, sittingPlayerCount());
+  }
+
+  function handleEditCardTap(index) {
+    if (!editHandDraft) {
+      return;
+    }
+
+    const sittingCount = sittingPlayerCount();
+    const hasPartner = state.handed === 5;
+
+    if (editHandDraft.picker === index) {
+      editHandDraft.picker = null;
+      if (hasPartner) {
+        if (editHandDraft.partner !== null) editHandDraft.partner = null;
+        editHandDraft.partner = index;
+      } else if (sittingCount > 0 && editHandDraft.sats.length < sittingCount) {
+        editHandDraft.sats.push(index);
+      }
+    } else if (editHandDraft.partner === index) {
+      editHandDraft.partner = null;
+      if (sittingCount > 0) {
+        const sats = editHandDraft.sats.filter(satIndex => satIndex !== index);
+        if (sats.length < sittingCount) {
+          sats.push(index);
+        }
+        storeEditDraftSats(sats);
+      }
+    } else if (editDraftHasSat(index)) {
+      storeEditDraftSats(editHandDraft.sats.filter(satIndex => satIndex !== index));
+    } else {
+      if (editHandDraft.picker === null) {
+        editHandDraft.picker = index;
+      } else if (hasPartner && editHandDraft.partner === null) {
+        editHandDraft.partner = index;
+      } else if (sittingCount > 0 && editHandDraft.sats.length < sittingCount) {
+        editHandDraft.sats.push(index);
+      }
+    }
+
+    if (state.handed === 3) {
+      editHandDraft.partner = null;
+    }
+    renderEditHandPlayers();
+  }
+
+  function renderEditHandPlayers() {
+    const grid = document.getElementById("editHandPlayersGrid");
+    const count = state.gameType;
+    grid.style.setProperty("--mobile-player-columns", Math.ceil(count / 2));
+    grid.style.setProperty("--player-count", count);
+    grid.innerHTML = "";
+
+    for (let i = 0; i < count; i++) {
+      let cardClass = "";
+      let badgeHtml = "";
+
+      if (editHandDraft.picker === i) {
+        cardClass = "picker";
+        badgeHtml = `<div class="role-badge badge-picker">Picker</div>`;
+      } else if (editHandDraft.partner === i) {
+        cardClass = "partner";
+        badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
+      } else if (editDraftHasSat(i)) {
+        cardClass = "sat";
+        badgeHtml = `<div class="role-badge badge-sat">Sat Out</div>`;
+      }
+
+      grid.innerHTML += `
+        <div class="total-card ${cardClass}" onclick="handleEditCardTap(${i})">
+          <div class="total-name">${getDisplayName(i)}</div>
+          <div class="total-score">#${i + 1}</div>
+          <div class="role-badge-slot">${badgeHtml}</div>
+        </div>
+      `;
+    }
+
+    document.getElementById("saveEditHandButton").disabled =
+      editHandDraft.picker === null || editHandDraft.sats.length !== sittingPlayerCount();
+  }
+
+  function saveEditedHand(event) {
+    event.preventDefault();
+    if (!editHandDraft || editHandDraft.picker === null || editHandDraft.sats.length !== sittingPlayerCount()) {
+      return;
+    }
+
+    const hand = state.history[editHandIndex];
+    const outcome = document.getElementById("editOutcomeSelect").value;
+    const multiplier = parseInt(document.getElementById("editMultiplierSelect").value);
+    const partner = state.handed === 5 && editHandDraft.partner !== null ? editHandDraft.partner : null;
+    const sats = editHandDraft.sats.slice();
+    const deltas = calculateHand({
+      picker: editHandDraft.picker,
+      partner,
+      sats,
+      outcome,
+      multiplier,
+      gameSettings: state
+    });
+
+    state.history[editHandIndex] = {
+      ...hand,
+      picker: editHandDraft.picker,
+      partner,
+      sats,
+      outcome,
+      multiplier,
+      deltas
+    };
+    state.updatedAt = nowIso();
+    closeEditHandModal();
+    saveState();
+    updateStandings();
+  }
+
   function submitPresetHand() {
     if (!isHandReadyToSubmit()) {
       return;
@@ -1168,69 +1529,31 @@
 
     const outcome = document.getElementById("outcomeSelect").value;
     const mult = parseInt(document.getElementById("multiplierSelect").value);
-
-    let deltas = new Array(count).fill(0);
-    const bumpFactor = state.doubleOnBump ? 2 : 1;
-    let basePicker = 2, basePartner = 1, baseDef = -1;
-
-    switch (outcome) {
-      case "schneider": 
-        basePicker = 4; basePartner = 2; baseDef = -2; 
-        break;
-      case "schwarz": 
-        basePicker = 6; basePartner = 3; baseDef = -3; 
-        break;
-      case "loss": 
-        basePicker = -2 * bumpFactor; basePartner = -1 * bumpFactor; baseDef = 1 * bumpFactor; 
-        break;
-      case "schneider-loss": 
-        basePicker = -4 * bumpFactor; basePartner = -2 * bumpFactor; baseDef = 2 * bumpFactor; 
-        break;
-      case "schwarz-loss": 
-        basePicker = -6 * bumpFactor; basePartner = -3 * bumpFactor; baseDef = 3 * bumpFactor; 
-        break;
-    }
-
-    let pPts = basePicker * mult;
-    let ptPts = basePartner * mult;
-    let defPts = baseDef * mult;
-
-    if (state.handed === 3 || partnerIdx === null) {
-      // Picker went alone
-      let pickerTotal = 0;
-      for (let i = 0; i < count; i++) {
-        if (i !== pickerIdx && !sats.includes(i)) {
-          deltas[i] = defPts;
-          pickerTotal -= defPts;
-        }
-      }
-      deltas[pickerIdx] = pickerTotal;
-    } else {
-      // Picker + Partner
-      deltas[pickerIdx] = pPts;
-      deltas[partnerIdx] = outcome === "schwarz-loss" && state.noTrickPartnerDoesntLose ? 0 : ptPts;
-      for (let i = 0; i < count; i++) {
-        if (i !== pickerIdx && i !== partnerIdx && !sats.includes(i)) {
-          deltas[i] = defPts;
-        }
-      }
-      if (outcome === "schwarz-loss" && state.noTrickPartnerDoesntLose) {
-        deltas[pickerIdx] = 0 - deltas.reduce((sum, delta, index) => (
-          index === pickerIdx ? sum : sum + delta
-        ), 0);
-      }
-    }
+    const effectivePartner = state.handed === 5 && partnerIdx !== null ? partnerIdx : null;
+    const deltas = calculateHand({
+      picker: pickerIdx,
+      partner: effectivePartner,
+      sats,
+      outcome,
+      multiplier: mult,
+      gameSettings: state
+    });
 
     state.history.push({
+      id: createId("hand"),
       deltas,
       picker: pickerIdx,
-      partner: state.handed === 5 && partnerIdx !== null ? partnerIdx : null
+      partner: effectivePartner,
+      sats,
+      outcome,
+      multiplier: mult
     });
 
     // Rotate sitting player clockwise for the next hand
     resetRoles();
     document.getElementById("outcomeSelect").selectedIndex = 0;
     document.getElementById("multiplierSelect").selectedIndex = 0;
+    state.updatedAt = nowIso();
     saveState();
     updateStandings();
   }
@@ -1317,7 +1640,7 @@
     }
 
     historyRows.forEach(({ hand, handNumber, totals }) => {
-      let tr = `<tr><td>${handNumber}</td>`;
+      let tr = `<tr><td><button class="inline-button" type="button" onclick="openEditHandModal(${handNumber - 1})">${handNumber}</button></td>`;
       for (let i = 0; i < count; i++) {
         let val = state.historyShowTotals ? totals[i] : hand.deltas[i] || 0;
         let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
