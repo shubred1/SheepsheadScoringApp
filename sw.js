@@ -4,6 +4,8 @@ const CACHE_NAME = `sheepshead-scorekeeper-${self.SHEEPSHEAD_APP_VERSION}`;
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./styles.css",
+  "./app.js",
   "./version.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
