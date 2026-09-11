@@ -101,6 +101,8 @@
       noTrickPartnerDoesntLose: true,
       roles: { pickerId: null, partnerId: null, satIds: [] },
       history: [],
+      historyNewestFirst: true,
+      historyShowTotals: true,
       ...overrides
     };
   }
@@ -187,6 +189,8 @@
     state.roles.partnerId = activePlayerIds().includes(state.roles.partnerId) ? state.roles.partnerId : null;
     state.roles.satIds = Array.isArray(state.roles.satIds) ? state.roles.satIds : [];
     state.history = Array.isArray(state.history) ? state.history : [];
+    state.historyNewestFirst = state.historyNewestFirst !== false;
+    state.historyShowTotals = state.historyShowTotals !== false;
     state.fixedSatIds = Array.isArray(state.fixedSatIds) ? state.fixedSatIds : [];
     state.fixedSatIds = fixedSatIds();
 
