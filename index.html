@@ -491,6 +491,7 @@
       <div class="menu-panel" id="appMenu" hidden>
         <button class="menu-item" type="button" onclick="openNewGameModal()">New Game</button>
         <button class="menu-item" type="button" onclick="openSettingsModal()">Game Settings</button>
+        <button class="menu-item" type="button" onclick="openUndoModal()">Undo Last Hand</button>
         <button class="menu-item" type="button" onclick="openThemeModal()">Theme</button>
         <button class="menu-item" type="button" onclick="openAboutModal()">About</button>
       </div>
@@ -614,6 +615,19 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="undoModal" hidden>
+  <div class="modal">
+    <h2>Undo Last Hand</h2>
+    <div class="about-content">
+      <p id="undoModalMessage">Remove the most recent hand from the history?</p>
+    </div>
+    <div class="modal-actions" id="undoModalActions">
+      <button class="btn-secondary" type="button" onclick="closeUndoModal()">Cancel</button>
+      <button class="btn-danger" id="undoConfirmButton" type="button" onclick="confirmUndoLastHand()">Undo</button>
+    </div>
+  </div>
+</div>
+
 <script src="version.js"></script>
 <script>
   const STORAGE_KEY = "sheepshead_scorekeeper_data";
@@ -730,6 +744,16 @@
     document.getElementById("themeModal").hidden = false;
   }
 
+  function openUndoModal() {
+    closeMenu();
+    const hasHands = state.history.length > 0;
+    document.getElementById("undoModalMessage").textContent = hasHands
+      ? `Remove hand #${state.history.length} from the history?`
+      : "There are no hands to undo.";
+    document.getElementById("undoConfirmButton").hidden = !hasHands;
+    document.getElementById("undoModal").hidden = false;
+  }
+
   function openAboutModal() {
     closeMenu();
     document.getElementById("appVersion").textContent = APP_VERSION;
@@ -745,8 +769,24 @@
     document.getElementById("themeModal").hidden = true;
   }
 
+  function closeUndoModal() {
+    document.getElementById("undoModal").hidden = true;
+  }
+
   function closeAboutModal() {
     document.getElementById("aboutModal").hidden = true;
+  }
+
+  function confirmUndoLastHand() {
+    if (state.history.length === 0) {
+      closeUndoModal();
+      return;
+    }
+
+    state.history.pop();
+    closeUndoModal();
+    saveState();
+    updateStandings();
   }
 
   function applyTheme() {
