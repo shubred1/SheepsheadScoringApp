@@ -23,7 +23,7 @@
     <div class="menu-wrapper">
       <button class="menu-button" type="button" onclick="toggleMenu()" aria-label="Menu">☰</button>
       <div class="menu-panel" id="appMenu" hidden>
-        <button class="menu-item" type="button" onclick="openNewGameModal()">New Game</button>
+        <button class="menu-item" type="button" onclick="openGamesModal()">Games</button>
         <button class="menu-item" type="button" onclick="openSettingsModal()">Game Settings</button>
         <button class="menu-item" type="button" onclick="openUndoModal()">Undo Last Hand</button>
         <button class="menu-item" type="button" onclick="openThemeModal()">Theme</button>
@@ -31,6 +31,7 @@
       </div>
     </div>
   </div>
+  <div class="active-game-name" id="activeGameName"></div>
 
   <!-- Current Hand Card -->
   <div class="card game-section">
@@ -89,6 +90,10 @@
 <div class="modal-backdrop" id="settingsModal" hidden>
   <form class="modal" onsubmit="saveModal(event)">
     <h2 id="modalTitle">New Game</h2>
+    <div class="modal-game-name-field">
+      <label>Game Name</label>
+      <input id="modalGameName" type="text" required />
+    </div>
     <div id="modalGameTypeField">
       <div class="grid">
         <div>
@@ -121,6 +126,30 @@
       <button type="submit" id="modalSubmitButton">Save</button>
     </div>
   </form>
+</div>
+
+<div class="modal-backdrop" id="gamesModal" hidden>
+  <div class="modal">
+    <h2>Games</h2>
+    <div class="games-list" id="gamesList"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" type="button" onclick="openNewGameFromGames()">+ New Game</button>
+      <button type="button" onclick="closeGamesModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="deleteGameModal" hidden>
+  <div class="modal">
+    <h2>Delete Game</h2>
+    <div class="about-content">
+      <p id="deleteGameMessage">Delete this game?</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" type="button" onclick="closeDeleteGameModal()">Cancel</button>
+      <button class="btn-danger" type="button" onclick="confirmDeleteGame()">Delete</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-backdrop" id="themeModal" hidden>

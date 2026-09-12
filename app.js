@@ -9,6 +9,7 @@
   let modalPlayerDrafts = [];
   let editHandIndex = null;
   let editHandDraft = null;
+  let pendingDeleteGameId = null;
   let shouldShowCompatibilityNotice = false;
   let shouldOpenNewGameOnFirstRun = false;
 
@@ -80,6 +81,24 @@
     return handed === 3 ? 3 : 5;
   }
 
+  function defaultGameName() {
+    return `Game ${appData && Array.isArray(appData.games) ? appData.games.length + 1 : 1}`;
+  }
+
+  function fallbackGameName(game = state) {
+    if (appData && Array.isArray(appData.games)) {
+      const index = appData.games.indexOf(game);
+      if (index >= 0) {
+        return `Game ${index + 1}`;
+      }
+    }
+    return "Untitled Game";
+  }
+
+  function displayGameName(game = state) {
+    return game && game.name && game.name.trim() ? game.name.trim() : fallbackGameName(game);
+  }
+
   function maxPlayerCountForHanded(handed) {
     return validPlayerCountsForHanded(handed).at(-1);
   }
@@ -132,6 +151,46 @@
     return createGame({ id: "new-game-draft" });
   }
 
+  function sortedGames() {
+    return appData.games.slice().sort((a, b) => {
+      const bTime = Date.parse(b.updatedAt || b.createdAt || "") || 0;
+      const aTime = Date.parse(a.updatedAt || a.createdAt || "") || 0;
+      return bTime - aTime;
+    });
+  }
+
+  function normalizeCurrentGameState() {
+    state.handed = [3, 5].includes(parseInt(state.handed)) ? parseInt(state.handed) : 5;
+    state.name = state.name && state.name.trim() ? state.name.trim() : fallbackGameName(state);
+    state.createdAt = state.createdAt || nowIso();
+    state.updatedAt = state.updatedAt || state.createdAt;
+    const savedPlayerCount = state.playerCount ?? state.gameType;
+    state.playerCount = normalizePlayerCountForHanded(state.handed, savedPlayerCount);
+    state.doubleOnBump = state.doubleOnBump !== false;
+    state.noTrickPartnerDoesntLose = state.noTrickPartnerDoesntLose !== false;
+    if (!validPlayerCountsForHanded(state.handed).includes(state.playerCount)) {
+      state.handed = state.playerCount <= 4 ? 3 : 5;
+      state.playerCount = normalizePlayerCountForHanded(state.handed, state.playerCount);
+    }
+    state.players = Array.isArray(state.players) ? state.players.map(normalizePlayer) : emptyPlayers();
+    while (state.players.length < MAX_PLAYERS) {
+      state.players.push(createPlayer());
+    }
+    if (!state.roles) {
+      state.roles = { pickerId: null, partnerId: null, satIds: [] };
+    }
+    state.roles.pickerId = activePlayerIds().includes(state.roles.pickerId) ? state.roles.pickerId : null;
+    state.roles.partnerId = activePlayerIds().includes(state.roles.partnerId) ? state.roles.partnerId : null;
+    state.roles.satIds = Array.isArray(state.roles.satIds) ? state.roles.satIds : [];
+    state.history = Array.isArray(state.history) ? state.history : [];
+    state.historyNewestFirst = state.historyNewestFirst !== false;
+    state.historyShowTotals = state.historyShowTotals !== false;
+    state.fixedSatIds = Array.isArray(state.fixedSatIds) ? state.fixedSatIds : [];
+    state.fixedSatIds = fixedSatIds();
+
+    normalizeSatRoles();
+  }
+
   function loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     const hadSavedData = saved !== null;
@@ -173,32 +232,7 @@
         shouldOpenNewGameOnFirstRun = true;
       }
     }
-    state.handed = [3, 5].includes(parseInt(state.handed)) ? parseInt(state.handed) : 5;
-    const savedPlayerCount = state.playerCount ?? state.gameType;
-    state.playerCount = normalizePlayerCountForHanded(state.handed, savedPlayerCount);
-    state.doubleOnBump = state.doubleOnBump !== false;
-    state.noTrickPartnerDoesntLose = state.noTrickPartnerDoesntLose !== false;
-    if (!validPlayerCountsForHanded(state.handed).includes(state.playerCount)) {
-      state.handed = state.playerCount <= 4 ? 3 : 5;
-      state.playerCount = normalizePlayerCountForHanded(state.handed, state.playerCount);
-    }
-    state.players = Array.isArray(state.players) ? state.players.map(normalizePlayer) : emptyPlayers();
-    while (state.players.length < MAX_PLAYERS) {
-      state.players.push(createPlayer());
-    }
-    if (!state.roles) {
-      state.roles = { pickerId: null, partnerId: null, satIds: [] };
-    }
-    state.roles.pickerId = activePlayerIds().includes(state.roles.pickerId) ? state.roles.pickerId : null;
-    state.roles.partnerId = activePlayerIds().includes(state.roles.partnerId) ? state.roles.partnerId : null;
-    state.roles.satIds = Array.isArray(state.roles.satIds) ? state.roles.satIds : [];
-    state.history = Array.isArray(state.history) ? state.history : [];
-    state.historyNewestFirst = state.historyNewestFirst !== false;
-    state.historyShowTotals = state.historyShowTotals !== false;
-    state.fixedSatIds = Array.isArray(state.fixedSatIds) ? state.fixedSatIds : [];
-    state.fixedSatIds = fixedSatIds();
-
-    normalizeSatRoles();
+    normalizeCurrentGameState();
     applyTheme();
     updateOutcomeOptions();
   }
@@ -265,6 +299,7 @@
     document.getElementById("modalTitle").textContent = "New Game";
     document.getElementById("modalSubmitButton").textContent = "Start Game";
     document.getElementById("modalCancelButton").hidden = firstGameRequired;
+    document.getElementById("modalGameName").value = defaultGameName();
     document.getElementById("modalGameTypeField").hidden = false;
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("modalHanded").value = String(state.handed);
@@ -283,6 +318,7 @@
     document.getElementById("modalTitle").textContent = "Game Settings";
     document.getElementById("modalSubmitButton").textContent = "Save";
     document.getElementById("modalCancelButton").hidden = false;
+    document.getElementById("modalGameName").value = displayGameName(state);
     document.getElementById("modalGameTypeField").hidden = true;
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("addPlayerButton").hidden = false;
@@ -290,6 +326,21 @@
     modalPlayerDrafts = state.players.map(normalizePlayer);
     renderModalPlayerInputs(state.playerCount, state.players);
     document.getElementById("settingsModal").hidden = false;
+  }
+
+  function openGamesModal() {
+    closeMenu();
+    renderGamesList();
+    document.getElementById("gamesModal").hidden = false;
+  }
+
+  function closeGamesModal() {
+    document.getElementById("gamesModal").hidden = true;
+  }
+
+  function openNewGameFromGames() {
+    closeGamesModal();
+    openNewGameModal();
   }
 
   function openThemeModal() {
@@ -333,6 +384,11 @@
 
   function closeAboutModal() {
     document.getElementById("aboutModal").hidden = true;
+  }
+
+  function closeDeleteGameModal() {
+    pendingDeleteGameId = null;
+    document.getElementById("deleteGameModal").hidden = true;
   }
 
   function startAfterCompatibilityReset() {
@@ -822,13 +878,105 @@
     renderModalPlayerInputs(settings.playerCount, getModalPlayers());
   }
 
+  function gameMetadata(game) {
+    const handCount = Array.isArray(game.history) ? game.history.length : 0;
+    const playerCount = game.playerCount ?? game.gameType ?? 0;
+    const lastPlayed = game.updatedAt ? new Date(game.updatedAt).toLocaleString() : "never";
+    return `${playerCount} players · ${handCount} hands · Last played ${lastPlayed}`;
+  }
+
+  function renderGamesList() {
+    const list = document.getElementById("gamesList");
+    list.innerHTML = "";
+    const games = sortedGames();
+    if (games.length === 0) {
+      list.innerHTML = `<div class="games-empty">No saved games.</div>`;
+      return;
+    }
+    games.forEach(game => {
+      const isActive = game.id === appData.activeGameId;
+      list.innerHTML += `
+        <button class="game-row ${isActive ? "active" : ""}" type="button" onclick="switchGame('${escapeAttribute(game.id)}')">
+          <span class="game-row-main">
+            <span class="game-row-name">${escapeAttribute(displayGameName(game))}${isActive ? " · Current" : ""}</span>
+            <span class="game-row-meta">${escapeAttribute(gameMetadata(game))}</span>
+          </span>
+          <span class="game-delete-button" role="button" tabindex="0" aria-label="Delete ${escapeAttribute(displayGameName(game))}" onclick="promptDeleteGame(event, '${escapeAttribute(game.id)}')">🗑</span>
+        </button>
+      `;
+    });
+  }
+
+  function switchGame(gameId) {
+    const nextGame = appData.games.find(game => game.id === gameId);
+    if (!nextGame || nextGame.id === appData.activeGameId) {
+      closeGamesModal();
+      return;
+    }
+    appData.activeGameId = nextGame.id;
+    state = nextGame;
+    normalizeCurrentGameState();
+    saveState();
+    closeGamesModal();
+    updateOutcomeOptions();
+    updateStandings();
+  }
+
+  function promptDeleteGame(event, gameId) {
+    event.stopPropagation();
+    const game = appData.games.find(candidate => candidate.id === gameId);
+    if (!game) return;
+    pendingDeleteGameId = gameId;
+    document.getElementById("deleteGameMessage").textContent = `Delete "${displayGameName(game)}"?`;
+    document.getElementById("deleteGameModal").hidden = false;
+  }
+
+  function confirmDeleteGame() {
+    if (!pendingDeleteGameId) return;
+    const deletingActive = pendingDeleteGameId === appData.activeGameId;
+    appData.games = appData.games.filter(game => game.id !== pendingDeleteGameId);
+    pendingDeleteGameId = null;
+    document.getElementById("deleteGameModal").hidden = true;
+
+    if (deletingActive) {
+      if (appData.games.length > 0) {
+        const nextGame = sortedGames()[0];
+        appData.activeGameId = nextGame.id;
+        state = nextGame;
+        normalizeCurrentGameState();
+      } else {
+        appData.activeGameId = null;
+        state = createRuntimeDraftGame();
+      }
+    }
+
+    saveState();
+    renderGamesList();
+    updateOutcomeOptions();
+    updateStandings();
+
+    if (!hasSavedGame()) {
+      closeGamesModal();
+      openNewGameModal();
+    }
+  }
+
   function saveModal(event) {
     event.preventDefault();
     const modalPlayers = getModalPlayers();
+    const nameInput = document.getElementById("modalGameName");
+    const gameName = nameInput.value.trim();
+    if (!gameName) {
+      nameInput.value = "";
+      if (nameInput.focus) nameInput.focus();
+      if (nameInput.reportValidity) nameInput.reportValidity();
+      return;
+    }
 
     if (modalMode === "new") {
       const mode = currentModalGameSettings();
       const newGame = createGame({
+        name: gameName,
         handed: mode.handed,
         playerCount: mode.playerCount,
         players: modalPlayers,
@@ -836,12 +984,7 @@
         doubleOnBump: document.getElementById("doubleOnBumpCheckbox").checked,
         noTrickPartnerDoesntLose: document.getElementById("noTrickPartnerCheckbox").checked
       });
-      const activeIndex = appData.games.findIndex(game => game.id === appData.activeGameId);
-      if (activeIndex >= 0) {
-        appData.games[activeIndex] = newGame;
-      } else {
-        appData.games.push(newGame);
-      }
+      appData.games.push(newGame);
       appData.activeGameId = newGame.id;
       state = newGame;
       storeSatIds(defaultSatIds());
@@ -862,6 +1005,7 @@
       if (addedSittingSlots > 0 && addedPlayerIds.length > 0) {
         storeSatIds(previousSatIds.concat(addedPlayerIds.slice(0, addedSittingSlots)));
       }
+      state.name = gameName;
       if (fixedSatIds().includes(state.roles.pickerId)) {
         state.roles.pickerId = null;
       }
@@ -1164,6 +1308,7 @@
     players.forEach(player => {
       totals[player.id] = 0;
     });
+    document.getElementById("activeGameName").textContent = hasSavedGame() ? displayGameName(state) : "";
     updateRoleInstruction();
 
     state.history.forEach(hand => {
