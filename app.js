@@ -7,6 +7,7 @@
   let state = null;
   let modalMode = null;
   let modalPlayerDrafts = [];
+  let modalDefaultGameName = "";
   let editHandIndex = null;
   let editHandDraft = null;
   let pendingDeleteGameId = null;
@@ -82,7 +83,11 @@
   }
 
   function defaultGameName() {
-    return `Game ${appData && Array.isArray(appData.games) ? appData.games.length + 1 : 1}`;
+    const dateLabel = new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric"
+    });
+    return `${dateLabel} Game`;
   }
 
   function fallbackGameName(game = state) {
@@ -299,7 +304,11 @@
     document.getElementById("modalTitle").textContent = "New Game";
     document.getElementById("modalSubmitButton").textContent = "Start Game";
     document.getElementById("modalCancelButton").hidden = firstGameRequired;
-    document.getElementById("modalGameName").value = defaultGameName();
+    modalDefaultGameName = defaultGameName();
+    const gameNameInput = document.getElementById("modalGameName");
+    gameNameInput.value = "";
+    gameNameInput.placeholder = modalDefaultGameName;
+    gameNameInput.required = false;
     document.getElementById("modalGameTypeField").hidden = false;
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("modalHanded").value = String(state.handed);
@@ -318,7 +327,10 @@
     document.getElementById("modalTitle").textContent = "Game Settings";
     document.getElementById("modalSubmitButton").textContent = "Save";
     document.getElementById("modalCancelButton").hidden = false;
-    document.getElementById("modalGameName").value = displayGameName(state);
+    const gameNameInput = document.getElementById("modalGameName");
+    gameNameInput.value = displayGameName(state);
+    gameNameInput.placeholder = "";
+    gameNameInput.required = true;
     document.getElementById("modalGameTypeField").hidden = true;
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("addPlayerButton").hidden = false;
@@ -965,7 +977,7 @@
     event.preventDefault();
     const modalPlayers = getModalPlayers();
     const nameInput = document.getElementById("modalGameName");
-    const gameName = nameInput.value.trim();
+    const gameName = nameInput.value.trim() || (modalMode === "new" ? modalDefaultGameName : "");
     if (!gameName) {
       nameInput.value = "";
       if (nameInput.focus) nameInput.focus();
