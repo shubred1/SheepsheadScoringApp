@@ -67,6 +67,35 @@
     return activePlayers().findIndex(player => player.id === id);
   }
 
+  function gameMode(game = state) {
+    if (game && ["three", "five", "cut-throat", "partners"].includes(game.mode)) return game.mode;
+    return parseInt(game && game.handed) === 3 ? "three" : "five";
+  }
+
+  function handedForMode(mode) {
+    return mode === "three" ? 3 : mode === "five" ? 5 : 4;
+  }
+
+  function gameTypeLabel(game = state) {
+    return ({ three: "3-Handed", "cut-throat": "4-Handed Cut Throat", partners: "4-Handed Partners", five: "5-Handed" })[gameMode(game)];
+  }
+
+  function isPartnersGame(game = state) {
+    return gameMode(game) === "partners";
+  }
+
+  function hasPartnerRole(game = state) {
+    return gameMode(game) === "five" || isPartnersGame(game);
+  }
+
+  function doubleOnBumpAllowed(game = state) {
+    return gameMode(game) !== "partners";
+  }
+
+  function noTrickPartnerRuleAllowed(game = state) {
+    return gameMode(game) === "five";
+  }
+
   function defaultSatIds(count = state.playerCount, handed = state.handed, players = state.players) {
     return defaultSatIndexes(count, handed)
       .map(index => players[index])
@@ -74,12 +103,12 @@
       .map(player => player.id);
   }
 
-  function validPlayerCountsForHanded(handed) {
-    return handed === 3 ? [3, 4] : [5, 6, 7, 8];
+  function validPlayerCountsForMode(mode) {
+    return mode === "three" ? [3, 4] : mode === "five" ? [5, 6, 7, 8] : [4];
   }
 
-  function defaultPlayerCountForHanded(handed) {
-    return handed === 3 ? 3 : 5;
+  function defaultPlayerCountForMode(mode) {
+    return mode === "three" ? 3 : mode === "five" ? 5 : 4;
   }
 
   function defaultGameName() {
@@ -104,14 +133,14 @@
     return game && game.name && game.name.trim() ? game.name.trim() : fallbackGameName(game);
   }
 
-  function maxPlayerCountForHanded(handed) {
-    return validPlayerCountsForHanded(handed).at(-1);
+  function maxPlayerCountForMode(mode) {
+    return validPlayerCountsForMode(mode).at(-1);
   }
 
-  function normalizePlayerCountForHanded(handed, count) {
+  function normalizePlayerCountForMode(mode, count) {
     const parsed = parseInt(count);
-    const validCounts = validPlayerCountsForHanded(handed);
-    return validCounts.includes(parsed) ? parsed : defaultPlayerCountForHanded(handed);
+    const validCounts = validPlayerCountsForMode(mode);
+    return validCounts.includes(parsed) ? parsed : defaultPlayerCountForMode(mode);
   }
 
   function createGame(overrides = {}) {
@@ -122,6 +151,7 @@
       createdAt: timestamp,
       updatedAt: timestamp,
       handed: 5,
+      mode: "five",
       playerCount: 6,
       players: emptyPlayers(),
       fixedSatIds: [],
@@ -165,17 +195,19 @@
   }
 
   function normalizeCurrentGameState() {
-    state.handed = [3, 5].includes(parseInt(state.handed)) ? parseInt(state.handed) : 5;
+    state.mode = gameMode(state);
+    state.handed = handedForMode(state.mode);
     state.name = state.name && state.name.trim() ? state.name.trim() : fallbackGameName(state);
     state.createdAt = state.createdAt || nowIso();
     state.updatedAt = state.updatedAt || state.createdAt;
     const savedPlayerCount = state.playerCount ?? state.gameType;
-    state.playerCount = normalizePlayerCountForHanded(state.handed, savedPlayerCount);
+    state.playerCount = normalizePlayerCountForMode(state.mode, savedPlayerCount);
     state.doubleOnBump = state.doubleOnBump !== false;
     state.noTrickPartnerDoesntLose = state.noTrickPartnerDoesntLose !== false;
-    if (!validPlayerCountsForHanded(state.handed).includes(state.playerCount)) {
-      state.handed = state.playerCount <= 4 ? 3 : 5;
-      state.playerCount = normalizePlayerCountForHanded(state.handed, state.playerCount);
+    if (!validPlayerCountsForMode(state.mode).includes(state.playerCount)) {
+      state.mode = state.playerCount <= 4 ? "three" : "five";
+      state.handed = handedForMode(state.mode);
+      state.playerCount = normalizePlayerCountForMode(state.mode, state.playerCount);
     }
     state.players = Array.isArray(state.players) ? state.players.map(normalizePlayer) : emptyPlayers();
     while (state.players.length < MAX_PLAYERS) {
@@ -274,12 +306,12 @@
     document.getElementById("appMenu").hidden = true;
   }
 
-  function populateModalPlayerCountOptions(handed, selectedCount) {
+  function populateModalPlayerCountOptions(mode, selectedCount) {
     const select = document.getElementById("modalPlayerCount");
-    const validCounts = validPlayerCountsForHanded(handed);
+    const validCounts = validPlayerCountsForMode(mode);
     const nextSelected = validCounts.includes(parseInt(selectedCount))
       ? parseInt(selectedCount)
-      : defaultPlayerCountForHanded(handed);
+      : defaultPlayerCountForMode(mode);
     select.innerHTML = "";
     validCounts.forEach(count => {
       select.innerHTML += `<option value="${count}">${count}</option>`;
@@ -289,11 +321,12 @@
   }
 
   function currentModalGameSettings() {
-    const handed = parseInt(document.getElementById("modalHanded").value);
+    const mode = document.getElementById("modalHanded").value;
     const playerCount = parseInt(document.getElementById("modalPlayerCount").value);
     return {
-      handed,
-      playerCount: normalizePlayerCountForHanded(handed, playerCount)
+      mode,
+      handed: handedForMode(mode),
+      playerCount: normalizePlayerCountForMode(mode, playerCount)
     };
   }
 
@@ -311,11 +344,12 @@
     gameNameInput.required = false;
     document.getElementById("modalGameTypeField").hidden = false;
     document.getElementById("modalRuleSettings").hidden = false;
-    document.getElementById("modalHanded").value = String(state.handed);
-    const playerCount = populateModalPlayerCountOptions(state.handed, defaultPlayerCountForHanded(state.handed));
+    document.getElementById("modalHanded").value = gameMode(state);
+    const playerCount = populateModalPlayerCountOptions(gameMode(state), defaultPlayerCountForMode(gameMode(state)));
     document.getElementById("addPlayerButton").hidden = true;
     document.getElementById("doubleOnBumpCheckbox").checked = true;
     document.getElementById("noTrickPartnerCheckbox").checked = true;
+    updateRuleSettingsVisibility(gameMode(state));
     modalPlayerDrafts = emptyPlayers();
     renderModalPlayerInputs(playerCount, modalPlayerDrafts);
     document.getElementById("settingsModal").hidden = false;
@@ -335,6 +369,7 @@
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("addPlayerButton").hidden = false;
     updateRuleSettingsInputs();
+    updateRuleSettingsVisibility(gameMode(state));
     modalPlayerDrafts = state.players.map(normalizePlayer);
     renderModalPlayerInputs(state.playerCount, state.players);
     document.getElementById("settingsModal").hidden = false;
@@ -452,15 +487,30 @@
     document.getElementById("noTrickPartnerCheckbox").checked = state.noTrickPartnerDoesntLose;
   }
 
+  function updateRuleSettingsVisibility(mode = gameMode(state)) {
+    document.getElementById("doubleOnBumpSetting").hidden = mode === "partners";
+    document.getElementById("noTrickPartnerSetting").hidden = mode !== "five";
+  }
+
   function updateOutcomeOptions() {
-    const doubleFactor = state.doubleOnBump ? 2 : 1;
+    if (isPartnersGame()) {
+      document.querySelector("#outcomeSelect option[value='win']").textContent = "Win - Standard (+1 / +1)";
+      document.querySelector("#outcomeSelect option[value='schneider']").textContent = "Win - Schneider (+2 / +2)";
+      document.querySelector("#outcomeSelect option[value='schwarz']").textContent = "Win - No Tricks / Schwarz (+3 / +3)";
+      document.querySelector("#outcomeSelect option[value='loss']").textContent = "Loss - Bump (-1 / -1)";
+      document.querySelector("#outcomeSelect option[value='schneider-loss']").textContent = "Loss - Schneidered (-2 / -2)";
+      document.querySelector("#outcomeSelect option[value='schwarz-loss']").textContent = "Loss - No Tricks Taken (-3 / -3)";
+      return;
+    }
+    const doubleFactor = state.doubleOnBump && doubleOnBumpAllowed() ? 2 : 1;
     const lossPicker = -2 * doubleFactor;
     const lossPartner = -1 * doubleFactor;
     const schneiderPicker = -4 * doubleFactor;
     const schneiderPartner = -2 * doubleFactor;
     const noTrickDefender = 3 * doubleFactor;
-    const noTrickPicker = state.noTrickPartnerDoesntLose ? -3 * noTrickDefender : -6 * doubleFactor;
-    const noTrickPartner = state.noTrickPartnerDoesntLose ? 0 : -3 * doubleFactor;
+    const noTrickPartnerDoesntLose = noTrickPartnerRuleAllowed() && state.noTrickPartnerDoesntLose;
+    const noTrickPicker = noTrickPartnerDoesntLose ? -3 * noTrickDefender : -6 * doubleFactor;
+    const noTrickPartner = noTrickPartnerDoesntLose ? 0 : -3 * doubleFactor;
 
     document.querySelector("#outcomeSelect option[value='win']").textContent = "Win - Standard (+2 / +1)";
     document.querySelector("#outcomeSelect option[value='schneider']").textContent = "Win - Schneider (+4 / +2)";
@@ -477,8 +527,21 @@
     const players = activePlayers(gameSettings);
     const playerIds = players.map(player => player.id);
     const deltas = {};
-    const bumpFactor = gameSettings.doubleOnBump ? 2 : 1;
+    const bumpFactor = gameSettings.doubleOnBump && doubleOnBumpAllowed(gameSettings) ? 2 : 1;
     let basePicker = 2, basePartner = 1, baseDef = -1;
+
+    if (isPartnersGame(gameSettings) && partner !== null) {
+      const value = outcome === "schneider" || outcome === "schneider-loss" ? 2
+        : outcome === "schwarz" || outcome === "schwarz-loss" ? 3 : 1;
+      const attackersWin = !outcome.endsWith("loss");
+      const attackerPoints = (attackersWin ? value : -value) * multiplier;
+      const defenderPoints = -attackerPoints;
+      playerIds.forEach(id => {
+        if (id === picker || id === partner) deltas[id] = attackerPoints;
+        else if (!sats.includes(id)) deltas[id] = defenderPoints;
+      });
+      return deltas;
+    }
 
     switch (outcome) {
       case "schneider":
@@ -513,13 +576,14 @@
       deltas[picker] = pickerTotal;
     } else {
       deltas[picker] = pPts;
-      deltas[partner] = outcome === "schwarz-loss" && gameSettings.noTrickPartnerDoesntLose ? 0 : ptPts;
+      const noTrickPartnerDoesntLose = noTrickPartnerRuleAllowed(gameSettings) && gameSettings.noTrickPartnerDoesntLose;
+      deltas[partner] = outcome === "schwarz-loss" && noTrickPartnerDoesntLose ? 0 : ptPts;
       playerIds.forEach(id => {
         if (id !== picker && id !== partner && !sats.includes(id)) {
           deltas[id] = defPts;
         }
       });
-      if (outcome === "schwarz-loss" && gameSettings.noTrickPartnerDoesntLose) {
+      if (outcome === "schwarz-loss" && noTrickPartnerDoesntLose) {
         deltas[picker] = 0 - Object.entries(deltas).reduce((sum, [id, delta]) => (
           id === picker ? sum : sum + delta
         ), 0);
@@ -602,7 +666,7 @@
     if (fixed.includes(state.roles.partnerId)) {
       state.roles.partnerId = null;
     }
-    if (state.handed === 3) {
+    if (!hasPartnerRole()) {
       state.roles.partnerId = null;
     }
 
@@ -754,7 +818,7 @@
       button.hidden = true;
       return;
     }
-    const atMax = getModalPlayerCount() >= maxPlayerCountForHanded(state.handed);
+    const atMax = getModalPlayerCount() >= maxPlayerCountForMode(gameMode(state));
     button.hidden = atMax;
     button.disabled = atMax;
   }
@@ -764,7 +828,7 @@
       return;
     }
     const count = getModalPlayerCount();
-    const maxCount = maxPlayerCountForHanded(state.handed);
+    const maxCount = maxPlayerCountForMode(gameMode(state));
     if (count >= maxCount) {
       updateAddPlayerButton();
       return;
@@ -879,9 +943,10 @@
   }
 
   function handleModalGameTypeChange() {
-    const handed = parseInt(document.getElementById("modalHanded").value);
+    const mode = document.getElementById("modalHanded").value;
     const players = getModalPlayers();
-    const playerCount = populateModalPlayerCountOptions(handed, defaultPlayerCountForHanded(handed));
+    const playerCount = populateModalPlayerCountOptions(mode, defaultPlayerCountForMode(mode));
+    updateRuleSettingsVisibility(mode);
     renderModalPlayerInputs(playerCount, players);
   }
 
@@ -892,7 +957,7 @@
 
   function gameMetadata(game) {
     const handCount = Array.isArray(game.history) ? game.history.length : 0;
-    const handed = parseInt(game.handed) === 3 ? "3-Handed" : "5-Handed";
+    const handed = gameTypeLabel(game);
     const lastPlayed = game.updatedAt ? new Date(game.updatedAt).toLocaleString() : "never";
     return `${handed} · ${handCount} hands · Last played ${lastPlayed}`;
   }
@@ -989,12 +1054,13 @@
       const mode = currentModalGameSettings();
       const newGame = createGame({
         name: gameName,
+        mode: mode.mode,
         handed: mode.handed,
         playerCount: mode.playerCount,
         players: modalPlayers,
         roles: { pickerId: null, partnerId: null, satIds: [] },
-        doubleOnBump: document.getElementById("doubleOnBumpCheckbox").checked,
-        noTrickPartnerDoesntLose: document.getElementById("noTrickPartnerCheckbox").checked
+        doubleOnBump: doubleOnBumpAllowed({ mode: mode.mode }) && document.getElementById("doubleOnBumpCheckbox").checked,
+        noTrickPartnerDoesntLose: noTrickPartnerRuleAllowed({ mode: mode.mode }) && document.getElementById("noTrickPartnerCheckbox").checked
       });
       appData.games.push(newGame);
       appData.activeGameId = newGame.id;
@@ -1024,8 +1090,8 @@
       if (fixedSatIds().includes(state.roles.partnerId)) {
         state.roles.partnerId = null;
       }
-      state.doubleOnBump = document.getElementById("doubleOnBumpCheckbox").checked;
-      state.noTrickPartnerDoesntLose = document.getElementById("noTrickPartnerCheckbox").checked;
+      state.doubleOnBump = doubleOnBumpAllowed() && document.getElementById("doubleOnBumpCheckbox").checked;
+      state.noTrickPartnerDoesntLose = noTrickPartnerRuleAllowed() && document.getElementById("noTrickPartnerCheckbox").checked;
       normalizeSatRoles();
     }
     state.updatedAt = nowIso();
@@ -1058,7 +1124,9 @@
 
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
-    instruction.textContent = "Tap player cards to assign roles.";
+    instruction.textContent = hasPartnerRole()
+      ? "Tap a player for Picker, then optionally tap another for Partner."
+      : "Tap a player to assign Picker.";
   }
 
   function handleCardTap(index) {
@@ -1071,7 +1139,7 @@
     }
 
     const sittingCount = sittingPlayerCount();
-    const hasPartner = state.handed === 5;
+    const hasPartner = hasPartnerRole();
 
     if (state.roles.pickerId === playerId) {
       state.roles.pickerId = null;
@@ -1119,7 +1187,7 @@
     editHandIndex = historyIndex;
     editHandDraft = {
       pickerId: hand.pickerId,
-      partnerId: state.handed === 5 && hand.partnerId !== undefined ? hand.partnerId : null,
+      partnerId: hasPartnerRole() && hand.partnerId !== undefined ? hand.partnerId : null,
       satIds: Array.isArray(hand.satIds) ? hand.satIds.slice() : [],
       outcome: hand.outcome || "win",
       multiplier: hand.multiplier || 1
@@ -1158,7 +1226,7 @@
     }
 
     const sittingCount = sittingPlayerCount();
-    const hasPartner = state.handed === 5;
+    const hasPartner = hasPartnerRole();
 
     if (editHandDraft.pickerId === playerId) {
       editHandDraft.pickerId = null;
@@ -1189,7 +1257,7 @@
       }
     }
 
-    if (state.handed === 3) {
+    if (!hasPartnerRole()) {
       editHandDraft.partnerId = null;
     }
     renderEditHandPlayers();
@@ -1240,7 +1308,7 @@
     const hand = state.history[editHandIndex];
     const outcome = document.getElementById("editOutcomeSelect").value;
     const multiplier = parseInt(document.getElementById("editMultiplierSelect").value);
-    const partnerId = state.handed === 5 && editHandDraft.partnerId !== null ? editHandDraft.partnerId : null;
+    const partnerId = hasPartnerRole() && editHandDraft.partnerId !== null ? editHandDraft.partnerId : null;
     const satIdsForHand = editHandDraft.satIds.slice();
     const deltas = calculateHand({
       picker: editHandDraft.pickerId,
@@ -1277,7 +1345,7 @@
 
     const outcome = document.getElementById("outcomeSelect").value;
     const mult = parseInt(document.getElementById("multiplierSelect").value);
-    const effectivePartnerId = state.handed === 5 && partnerId !== null ? partnerId : null;
+    const effectivePartnerId = hasPartnerRole() && partnerId !== null ? partnerId : null;
     const deltas = calculateHand({
       picker: pickerId,
       partner: effectivePartnerId,

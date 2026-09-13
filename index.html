@@ -99,8 +99,10 @@
         <div>
           <label>Game Type</label>
           <select id="modalHanded" onchange="handleModalGameTypeChange()">
-            <option value="3">3-Handed</option>
-            <option value="5">5-Handed</option>
+            <option value="three">3-Handed</option>
+            <option value="cut-throat">4-Handed Cut Throat</option>
+            <option value="partners">4-Handed Partners</option>
+            <option value="five">5-Handed</option>
           </select>
         </div>
         <div>
@@ -112,11 +114,11 @@
     <div class="modal-player-list" id="modalPlayerNameInputs"></div>
     <button class="btn-secondary add-player-button" id="addPlayerButton" type="button" onclick="addModalPlayer()" hidden>+ Add Player</button>
     <div class="modal-rule-settings" id="modalRuleSettings" hidden>
-      <label class="sit-checkbox-label">
+      <label class="sit-checkbox-label" id="doubleOnBumpSetting">
         <input id="doubleOnBumpCheckbox" type="checkbox" />
         Double on the bump
       </label>
-      <label class="sit-checkbox-label">
+      <label class="sit-checkbox-label" id="noTrickPartnerSetting">
         <input id="noTrickPartnerCheckbox" type="checkbox" />
         No trick partner doesn't lose
       </label>
@@ -174,7 +176,7 @@
     <div class="about-content">
       <p><strong>Sheepshead Scorekeeper</strong></p>
       <p>Version <span id="appVersion"></span></p>
-      <p>A local-first scorekeeper for 3-handed and 5-handed Sheepshead games.</p>
+      <p>A local-first scorekeeper for 3-, 4-, and 5-handed Sheepshead games.</p>
       <p>Scores, player names, settings, and theme preference are saved on this device in this browser.</p>
       <p>The app can be installed and used offline after it has loaded once while online.</p>
     </div>
