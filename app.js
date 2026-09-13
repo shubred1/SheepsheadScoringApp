@@ -1389,6 +1389,29 @@
       : `Player ${index + 1}`;
   }
 
+  function renderHandDetailBadges(hand) {
+    const outcomeBadges = {
+      schneider: { label: "NS", result: "win", description: "Schneider win" },
+      "schneider-loss": { label: "NS", result: "loss", description: "Schneider loss" },
+      schwarz: { label: "NT", result: "win", description: "No Tricks / Schwarz win" },
+      "schwarz-loss": { label: "NT", result: "loss", description: "No Tricks / Schwarz loss" }
+    };
+    const badges = [];
+    const outcomeBadge = outcomeBadges[hand.outcome];
+    if (outcomeBadge) {
+      badges.push(`<span class="history-detail-badge outcome-${outcomeBadge.result}" title="${outcomeBadge.description}">${outcomeBadge.label}</span>`);
+    }
+
+    const multiplier = Number(hand.multiplier);
+    if (multiplier > 1) {
+      badges.push(`<span class="history-detail-badge multiplier" title="${multiplier} times multiplier">${multiplier}x</span>`);
+    }
+
+    return badges.length > 0
+      ? `<div class="history-detail-badges">${badges.join("")}</div>`
+      : "";
+  }
+
   function updateStandings() {
     const count = state.playerCount;
     const players = activePlayers();
@@ -1442,7 +1465,7 @@
 
     // Render Table Header
     const th = document.getElementById("tableHeader");
-    th.innerHTML = "<th>#</th>";
+    th.innerHTML = '<th>#</th><th class="history-details-header" aria-label="Hand details">★</th>';
     for (let i = 0; i < count; i++) {
       th.innerHTML += `<th>${getDisplayName(i)}</th>`;
     }
@@ -1475,6 +1498,7 @@
 
     historyRows.forEach(({ hand, handNumber, totals }) => {
       let tr = `<tr><td><button class="inline-button" type="button" onclick="openEditHandModal(${handNumber - 1})">${handNumber}</button></td>`;
+      tr += `<td class="history-details-cell">${renderHandDetailBadges(hand)}</td>`;
       for (let i = 0; i < count; i++) {
         const playerId = playerIdAt(i);
         let val = state.historyShowTotals ? totals[playerId] || 0 : hand.deltas[playerId] || 0;
