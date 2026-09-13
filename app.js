@@ -104,7 +104,7 @@
   }
 
   function validPlayerCountsForMode(mode) {
-    return mode === "three" ? [3, 4] : mode === "five" ? [5, 6, 7, 8] : [4];
+    return mode === "three" ? [3, 4] : mode === "five" ? [5, 6, 7, 8] : [4, 5];
   }
 
   function defaultPlayerCountForMode(mode) {
@@ -349,7 +349,7 @@
     document.getElementById("addPlayerButton").hidden = true;
     document.getElementById("doubleOnBumpCheckbox").checked = true;
     document.getElementById("noTrickPartnerCheckbox").checked = true;
-    updateRuleSettingsVisibility(gameMode(state));
+    updateRuleSettingsAvailability(gameMode(state));
     modalPlayerDrafts = emptyPlayers();
     renderModalPlayerInputs(playerCount, modalPlayerDrafts);
     document.getElementById("settingsModal").hidden = false;
@@ -369,7 +369,7 @@
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("addPlayerButton").hidden = false;
     updateRuleSettingsInputs();
-    updateRuleSettingsVisibility(gameMode(state));
+    updateRuleSettingsAvailability(gameMode(state));
     modalPlayerDrafts = state.players.map(normalizePlayer);
     renderModalPlayerInputs(state.playerCount, state.players);
     document.getElementById("settingsModal").hidden = false;
@@ -487,9 +487,13 @@
     document.getElementById("noTrickPartnerCheckbox").checked = state.noTrickPartnerDoesntLose;
   }
 
-  function updateRuleSettingsVisibility(mode = gameMode(state)) {
-    document.getElementById("doubleOnBumpSetting").hidden = mode === "partners";
-    document.getElementById("noTrickPartnerSetting").hidden = mode !== "five";
+  function updateRuleSettingsAvailability(mode = gameMode(state)) {
+    const doubleOnBumpCheckbox = document.getElementById("doubleOnBumpCheckbox");
+    const noTrickPartnerCheckbox = document.getElementById("noTrickPartnerCheckbox");
+    doubleOnBumpCheckbox.disabled = mode === "partners";
+    noTrickPartnerCheckbox.disabled = mode !== "five";
+    document.getElementById("doubleOnBumpSetting").classList.toggle("disabled", doubleOnBumpCheckbox.disabled);
+    document.getElementById("noTrickPartnerSetting").classList.toggle("disabled", noTrickPartnerCheckbox.disabled);
   }
 
   function updateOutcomeOptions() {
@@ -946,7 +950,7 @@
     const mode = document.getElementById("modalHanded").value;
     const players = getModalPlayers();
     const playerCount = populateModalPlayerCountOptions(mode, defaultPlayerCountForMode(mode));
-    updateRuleSettingsVisibility(mode);
+    updateRuleSettingsAvailability(mode);
     renderModalPlayerInputs(playerCount, players);
   }
 
@@ -1165,6 +1169,8 @@
     } else {
       if (state.roles.pickerId === null) {
         state.roles.pickerId = playerId;
+      } else if (gameMode() === "cut-throat") {
+        state.roles.pickerId = playerId;
       } else if (hasPartner && state.roles.partnerId === null) {
         state.roles.partnerId = playerId;
       } else if (sittingCount > 0 && satIds().length < sittingCount) {
@@ -1249,6 +1255,8 @@
       storeEditDraftSats(editHandDraft.satIds.filter(satId => satId !== playerId));
     } else {
       if (editHandDraft.pickerId === null) {
+        editHandDraft.pickerId = playerId;
+      } else if (gameMode() === "cut-throat") {
         editHandDraft.pickerId = playerId;
       } else if (hasPartner && editHandDraft.partnerId === null) {
         editHandDraft.partnerId = playerId;
