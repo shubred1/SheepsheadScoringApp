@@ -149,6 +149,31 @@
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 12px;
     }
+    .hand-controls {
+      grid-template-columns: minmax(0, 3fr) minmax(90px, 1fr);
+    }
+    #outcomeSelect option,
+    #editOutcomeSelect option {
+      color: var(--text);
+      background-color: var(--field-bg);
+    }
+    #outcomeSelect option.outcome-option-win,
+    #editOutcomeSelect option.outcome-option-win {
+      background-color: color-mix(in srgb, var(--accent) 12%, var(--field-bg));
+    }
+    #outcomeSelect option.outcome-option-loss,
+    #editOutcomeSelect option.outcome-option-loss {
+      background-color: color-mix(in srgb, var(--danger) 12%, var(--field-bg));
+    }
+    #outcomeSelect option.outcome-option-special,
+    #editOutcomeSelect option.outcome-option-special {
+      background-color: color-mix(in srgb, var(--leaster-color) 12%, var(--field-bg));
+    }
+    @media (max-width: 340px) {
+      .hand-controls {
+        grid-template-columns: 1fr;
+      }
+    }
     label {
       display: block;
       font-size: 0.85rem;

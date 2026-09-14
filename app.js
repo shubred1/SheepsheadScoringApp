@@ -536,10 +536,10 @@
     const names = {
       win: "Win - Standard",
       schneider: "Win - Schneider",
-      schwarz: "Win - No Tricks / Schwarz",
+      schwarz: "Win - No Tricks",
       loss: state.doubleOnBump ? "Loss - Double Bump" : "Loss - Bump",
       "schneider-loss": "Loss - Schneidered",
-      "schwarz-loss": "Loss - No Tricks Taken",
+      "schwarz-loss": "Loss - No Tricks",
       leaster: "Leaster",
       moster: "Moster"
     };

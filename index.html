@@ -41,26 +41,26 @@
     </div>
     <div class="totals-grid" id="totalsGrid"></div>
     <label style="margin: 16px 0 10px; font-weight: bold;">Record Hand Outcome</label>
-    <div class="grid">
+    <div class="grid hand-controls">
       <div>
         <label>Hand Outcome</label>
         <select id="outcomeSelect" onchange="handleOutcomeChange()">
-          <option value="win">Win - Standard (+2 / +1)</option>
-          <option value="schneider">Win - Schneider (+4 / +2)</option>
-          <option value="schwarz">Win - No Tricks / Schwarz (+6 / +3)</option>
-          <option value="leaster">Leaster</option>
-          <option value="moster">Moster</option>
-          <option value="loss">Loss - Double Bump (-4 / -2)</option>
-          <option value="schneider-loss">Loss - Schneidered (-8 / -4)</option>
-          <option value="schwarz-loss">Loss - No Tricks Taken (-12 / -6)</option>
+          <option class="outcome-option-win" value="win">Win - Standard (+2 / +1)</option>
+          <option class="outcome-option-win" value="schneider">Win - Schneider (+4 / +2)</option>
+          <option class="outcome-option-win" value="schwarz">Win - No Tricks (+6 / +3)</option>
+          <option class="outcome-option-special" value="leaster">Leaster</option>
+          <option class="outcome-option-special" value="moster">Moster</option>
+          <option class="outcome-option-loss" value="loss">Loss - Double Bump (-4 / -2)</option>
+          <option class="outcome-option-loss" value="schneider-loss">Loss - Schneidered (-8 / -4)</option>
+          <option class="outcome-option-loss" value="schwarz-loss">Loss - No Tricks (-12 / -6)</option>
         </select>
       </div>
       <div>
-        <label>Multipliers</label>
+        <label>Multiplier</label>
         <select id="multiplierSelect">
-          <option value="1">1x (Standard)</option>
-          <option value="2">2x (Crack / Doubler)</option>
-          <option value="4">4x (Re-Crack / Blitz)</option>
+          <option value="1">1x</option>
+          <option value="2">2x</option>
+          <option value="4">4x</option>
           <option value="8">8x</option>
           <option value="16">16x</option>
         </select>
@@ -208,11 +208,11 @@
     <div class="totals-grid" id="editHandPlayersGrid"></div>
     <label class="edit-section-label">Hand Outcome</label>
     <select id="editOutcomeSelect" onchange="handleEditOutcomeChange()"></select>
-    <label class="edit-section-label">Multipliers</label>
+    <label class="edit-section-label">Multiplier</label>
     <select id="editMultiplierSelect">
-      <option value="1">1x (Standard)</option>
-      <option value="2">2x (Crack / Doubler)</option>
-      <option value="4">4x (Re-Crack / Blitz)</option>
+      <option value="1">1x</option>
+      <option value="2">2x</option>
+      <option value="4">4x</option>
       <option value="8">8x</option>
       <option value="16">16x</option>
     </select>
