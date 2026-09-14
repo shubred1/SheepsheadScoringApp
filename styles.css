@@ -683,6 +683,24 @@
       font-size: 0.85rem;
       background: var(--header-bg);
     }
+    .history-sort-header-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      width: auto;
+      margin: 0;
+      padding: 2px 4px;
+      background: transparent;
+      color: inherit;
+      border: none;
+      font: inherit;
+      line-height: 1;
+    }
+    .history-sort-header-button:hover {
+      opacity: 1;
+      color: var(--text);
+    }
     .instruction-text {
       font-size: 0.8rem;
       color: var(--subtext);
@@ -715,12 +733,6 @@
       padding: 8px 10px;
       font-size: 0.85rem;
       white-space: nowrap;
-    }
-    .history-order-button {
-      min-width: 40px;
-      width: 40px;
-      padding-left: 0;
-      padding-right: 0;
     }
     .submit-hand-button {
       display: block;

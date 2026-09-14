@@ -1656,17 +1656,27 @@
 
     // Render Table Header
     const th = document.getElementById("tableHeader");
-    th.innerHTML = '<th>#</th><th class="history-details-header" aria-label="Hand details">★</th>';
+    const historyOrderArrow = state.historyNewestFirst ? "↓" : "↑";
+    const historyOrderLabel = state.historyNewestFirst
+      ? "Currently newest first. Show oldest first"
+      : "Currently oldest first. Show newest first";
+    th.innerHTML = `
+      <th>
+        <button
+          class="history-sort-header-button"
+          type="button"
+          onclick="toggleHistoryOrder()"
+          aria-label="${historyOrderLabel}"
+          title="${historyOrderLabel}"
+        ># <span aria-hidden="true">${historyOrderArrow}</span></button>
+      </th>
+      <th class="history-details-header" aria-label="Hand details">★</th>
+    `;
     for (let i = 0; i < count; i++) {
       th.innerHTML += `<th>${getDisplayName(i)}</th>`;
     }
 
     // Render History Table
-    const historyOrderButton = document.getElementById("historyOrderButton");
-    const historyOrderAction = state.historyNewestFirst ? "Show oldest first" : "Show newest first";
-    historyOrderButton.textContent = state.historyNewestFirst ? "↑" : "↓";
-    historyOrderButton.setAttribute("aria-label", historyOrderAction);
-    historyOrderButton.title = historyOrderAction;
     const historyScoreModeButton = document.getElementById("historyScoreModeButton");
     historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hands" : "Show Totals";
     const tbody = document.getElementById("tableBody");
