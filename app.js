@@ -1207,15 +1207,37 @@
 
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
-    if (isSinglePlayerOutcome(currentOutcome())) {
-      instruction.textContent = isLeasterOutcome(currentOutcome())
-        ? "Tap a player to select the Leaster winner."
-        : "Tap a player to select the Moster loser.";
+    const mode = gameMode();
+    const count = state.playerCount;
+
+    if (mode === "three") {
+      instruction.textContent = count === 4
+        ? "Tap players to select the picker and sitting player."
+        : "Tap a player to select the picker.";
       return;
     }
-    instruction.textContent = hasPartnerRole()
-      ? "Tap a player for Picker, then optionally tap another for Partner."
-      : "Tap a player to assign Picker.";
+
+    if (mode === "cut-throat") {
+      instruction.textContent = count === 5
+        ? "Tap players to select the picker and sitting player."
+        : "Tap a player to select the picker.";
+      return;
+    }
+
+    if (mode === "partners") {
+      instruction.textContent = count === 5
+        ? "Tap players to select the picker, partner, and sitting player."
+        : "Tap players to select the picker and partner.";
+      return;
+    }
+
+    if (count === 5) {
+      instruction.textContent = "Tap players to select the picker and partner.";
+    } else if (count === 6) {
+      instruction.textContent = "Tap players to select the picker, partner, and sitting player.";
+    } else {
+      instruction.textContent = "Tap players to select the picker, partner, and sitting players.";
+    }
   }
 
   function normalizeSinglePlayerOutcomeRoles() {

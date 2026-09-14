@@ -695,6 +695,12 @@
       gap: 12px;
       margin-bottom: 8px;
     }
+    .history-title {
+      min-width: 0;
+    }
+    .history-helper {
+      margin: 2px 0 0;
+    }
     .history-actions {
       display: flex;
       gap: 8px;
