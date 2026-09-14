@@ -311,12 +311,19 @@
       min-width: 0;
       flex: 1 1 auto;
     }
+    .game-row-title {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+    }
     .game-row-name {
       font-weight: 700;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .game-row-type,
     .game-row-meta {
       color: var(--subtext);
       font-size: 0.78rem;
@@ -324,6 +331,9 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    .game-row-type {
+      flex: 0 1 auto;
     }
     .game-delete-button {
       display: flex;

@@ -1030,9 +1030,8 @@
 
   function gameMetadata(game) {
     const handCount = Array.isArray(game.history) ? game.history.length : 0;
-    const handed = gameTypeLabel(game);
     const lastPlayed = game.updatedAt ? new Date(game.updatedAt).toLocaleString() : "never";
-    return `${handed} · ${handCount} hands · Last played ${lastPlayed}`;
+    return `${handCount} hands · Last played ${lastPlayed}`;
   }
 
   function renderGamesList() {
@@ -1048,7 +1047,10 @@
       list.innerHTML += `
         <button class="game-row ${isActive ? "active" : ""}" type="button" onclick="switchGame('${escapeAttribute(game.id)}')">
           <span class="game-row-main">
-            <span class="game-row-name">${escapeAttribute(displayGameName(game))}</span>
+            <span class="game-row-title">
+              <span class="game-row-name">${escapeAttribute(displayGameName(game))}</span>
+              <span class="game-row-type">${escapeAttribute(gameTypeLabel(game))}</span>
+            </span>
             <span class="game-row-meta">${escapeAttribute(gameMetadata(game))}</span>
           </span>
           <span class="game-delete-button" role="button" tabindex="0" aria-label="Delete ${escapeAttribute(displayGameName(game))}" onclick="promptDeleteGame(event, '${escapeAttribute(game.id)}')">🗑</span>
