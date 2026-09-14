@@ -44,10 +44,11 @@
     <div class="grid">
       <div>
         <label>Hand Outcome</label>
-        <select id="outcomeSelect">
+        <select id="outcomeSelect" onchange="handleOutcomeChange()">
           <option value="win">Win - Standard (+2 / +1)</option>
           <option value="schneider">Win - Schneider (+4 / +2)</option>
           <option value="schwarz">Win - No Tricks / Schwarz (+6 / +3)</option>
+          <option value="leaster">Leaster</option>
           <option value="loss">Loss - Double Bump (-4 / -2)</option>
           <option value="schneider-loss">Loss - Schneidered (-8 / -4)</option>
           <option value="schwarz-loss">Loss - No Tricks Taken (-12 / -6)</option>
@@ -205,7 +206,7 @@
     <label class="edit-section-label">Players</label>
     <div class="totals-grid" id="editHandPlayersGrid"></div>
     <label class="edit-section-label">Hand Outcome</label>
-    <select id="editOutcomeSelect"></select>
+    <select id="editOutcomeSelect" onchange="handleEditOutcomeChange()"></select>
     <label class="edit-section-label">Multipliers</label>
     <select id="editMultiplierSelect">
       <option value="1">1x (Standard)</option>

@@ -96,6 +96,18 @@
     return gameMode(game) === "five";
   }
 
+  function isLeasterOutcome(outcome) {
+    return outcome === "leaster";
+  }
+
+  function currentOutcome() {
+    return document.getElementById("outcomeSelect").value;
+  }
+
+  function currentEditOutcome() {
+    return document.getElementById("editOutcomeSelect").value;
+  }
+
   function defaultSatIds(count = state.playerCount, handed = state.handed, players = state.players) {
     return defaultSatIndexes(count, handed)
       .map(index => players[index])
@@ -533,6 +545,16 @@
     const deltas = {};
     const bumpFactor = gameSettings.doubleOnBump && doubleOnBumpAllowed(gameSettings) ? 2 : 1;
     let basePicker = 2, basePartner = 1, baseDef = -1;
+
+    if (isLeasterOutcome(outcome)) {
+      const activePlayerIdsForHand = playerIds.filter(id => !sats.includes(id));
+      activePlayerIdsForHand.forEach(id => {
+        deltas[id] = id === picker
+          ? (activePlayerIdsForHand.length - 1) * multiplier
+          : -1 * multiplier;
+      });
+      return deltas;
+    }
 
     if (isPartnersGame(gameSettings) && partner !== null) {
       const value = outcome === "schneider" || outcome === "schneider-loss" ? 2
@@ -1107,7 +1129,13 @@
   }
 
   function isHandReadyToSubmit() {
-    return state.roles.pickerId !== null && satIds().length === sittingPlayerCount();
+    const leasterIsReady = !isLeasterOutcome(currentOutcome()) || (
+      state.roles.partnerId === null &&
+      activePlayerIds().includes(state.roles.pickerId) &&
+      !satIds().includes(state.roles.pickerId) &&
+      !fixedSatIds().includes(state.roles.pickerId)
+    );
+    return state.roles.pickerId !== null && leasterIsReady && satIds().length === sittingPlayerCount();
   }
 
   function updateSubmitButton() {
@@ -1128,9 +1156,28 @@
 
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
+    if (isLeasterOutcome(currentOutcome())) {
+      instruction.textContent = "Tap a player to select the Leaster winner.";
+      return;
+    }
     instruction.textContent = hasPartnerRole()
       ? "Tap a player for Picker, then optionally tap another for Partner."
       : "Tap a player to assign Picker.";
+  }
+
+  function normalizeLeasterRoles() {
+    const selectedIds = [state.roles.pickerId, state.roles.partnerId];
+    const eligibleIds = activePlayerIds().filter(id => !satIds().includes(id) && !fixedSatIds().includes(id));
+    state.roles.pickerId = selectedIds.find(id => eligibleIds.includes(id)) || null;
+    state.roles.partnerId = null;
+  }
+
+  function handleOutcomeChange() {
+    if (isLeasterOutcome(currentOutcome())) {
+      normalizeLeasterRoles();
+    }
+    saveState();
+    updateStandings();
   }
 
   function handleCardTap(index) {
@@ -1139,6 +1186,30 @@
     }
     const playerId = playerIdAt(index);
     if (!playerId) {
+      return;
+    }
+
+    if (isLeasterOutcome(currentOutcome())) {
+      const sittingCount = sittingPlayerCount();
+      const currentSatIds = satIds();
+      state.roles.partnerId = null;
+      if (isSatOut(index)) {
+        if (state.roles.pickerId === playerId) {
+          state.roles.pickerId = null;
+        }
+        storeSatIds(currentSatIds.filter(satId => satId !== playerId));
+      } else if (state.roles.pickerId === playerId && currentSatIds.length < sittingCount) {
+        state.roles.pickerId = null;
+        storeSatIds(currentSatIds.concat(playerId));
+      } else if (state.roles.pickerId === null) {
+        state.roles.pickerId = playerId;
+      } else if (currentSatIds.length < sittingCount) {
+        storeSatIds(currentSatIds.concat(playerId));
+      } else {
+        state.roles.pickerId = playerId;
+      }
+      saveState();
+      updateStandings();
       return;
     }
 
@@ -1193,7 +1264,7 @@
     editHandIndex = historyIndex;
     editHandDraft = {
       pickerId: hand.pickerId,
-      partnerId: hasPartnerRole() && hand.partnerId !== undefined ? hand.partnerId : null,
+      partnerId: !isLeasterOutcome(hand.outcome) && hasPartnerRole() && hand.partnerId !== undefined ? hand.partnerId : null,
       satIds: Array.isArray(hand.satIds) ? hand.satIds.slice() : [],
       outcome: hand.outcome || "win",
       multiplier: hand.multiplier || 1
@@ -1222,12 +1293,54 @@
     editHandDraft.satIds = validPlayerIds(ids).slice(0, sittingPlayerCount());
   }
 
+  function normalizeEditLeasterRoles() {
+    const selectedIds = [editHandDraft.pickerId, editHandDraft.partnerId];
+    const eligibleIds = activePlayerIds().filter(id => !editHandDraft.satIds.includes(id) && !fixedSatIds().includes(id));
+    editHandDraft.pickerId = selectedIds.find(id => eligibleIds.includes(id)) || null;
+    editHandDraft.partnerId = null;
+  }
+
+  function handleEditOutcomeChange() {
+    if (!editHandDraft) {
+      return;
+    }
+    if (isLeasterOutcome(currentEditOutcome())) {
+      normalizeEditLeasterRoles();
+    }
+    renderEditHandPlayers();
+  }
+
   function handleEditCardTap(index) {
     if (!editHandDraft) {
       return;
     }
     const playerId = playerIdAt(index);
     if (!playerId) {
+      return;
+    }
+
+    if (isLeasterOutcome(currentEditOutcome())) {
+      if (isFixedSat(index)) {
+        return;
+      }
+      const sittingCount = sittingPlayerCount();
+      editHandDraft.partnerId = null;
+      if (editDraftHasSat(index)) {
+        if (editHandDraft.pickerId === playerId) {
+          editHandDraft.pickerId = null;
+        }
+        storeEditDraftSats(editHandDraft.satIds.filter(satId => satId !== playerId));
+      } else if (editHandDraft.pickerId === playerId && editHandDraft.satIds.length < sittingCount) {
+        editHandDraft.pickerId = null;
+        storeEditDraftSats(editHandDraft.satIds.concat(playerId));
+      } else if (editHandDraft.pickerId === null) {
+        editHandDraft.pickerId = playerId;
+      } else if (editHandDraft.satIds.length < sittingCount) {
+        storeEditDraftSats(editHandDraft.satIds.concat(playerId));
+      } else {
+        editHandDraft.pickerId = playerId;
+      }
+      renderEditHandPlayers();
       return;
     }
 
@@ -1283,10 +1396,13 @@
       let badgeHtml = "";
 
       const playerId = playerIdAt(i);
-      if (editHandDraft.pickerId === playerId) {
+      if (isLeasterOutcome(currentEditOutcome()) && editHandDraft.pickerId === playerId) {
+        cardClass = "leaster";
+        badgeHtml = `<div class="role-badge badge-leaster">Leaster</div>`;
+      } else if (editHandDraft.pickerId === playerId) {
         cardClass = "picker";
         badgeHtml = `<div class="role-badge badge-picker">Picker</div>`;
-      } else if (editHandDraft.partnerId === playerId) {
+      } else if (!isLeasterOutcome(currentEditOutcome()) && editHandDraft.partnerId === playerId) {
         cardClass = "partner";
         badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
       } else if (editDraftHasSat(i)) {
@@ -1316,7 +1432,7 @@
     const hand = state.history[editHandIndex];
     const outcome = document.getElementById("editOutcomeSelect").value;
     const multiplier = parseInt(document.getElementById("editMultiplierSelect").value);
-    const partnerId = hasPartnerRole() && editHandDraft.partnerId !== null ? editHandDraft.partnerId : null;
+    const partnerId = !isLeasterOutcome(outcome) && hasPartnerRole() && editHandDraft.partnerId !== null ? editHandDraft.partnerId : null;
     const satIdsForHand = editHandDraft.satIds.slice();
     const deltas = calculateHand({
       picker: editHandDraft.pickerId,
@@ -1353,7 +1469,7 @@
 
     const outcome = document.getElementById("outcomeSelect").value;
     const mult = parseInt(document.getElementById("multiplierSelect").value);
-    const effectivePartnerId = hasPartnerRole() && partnerId !== null ? partnerId : null;
+    const effectivePartnerId = !isLeasterOutcome(outcome) && hasPartnerRole() && partnerId !== null ? partnerId : null;
     const deltas = calculateHand({
       picker: pickerId,
       partner: effectivePartnerId,
@@ -1394,7 +1510,8 @@
       schneider: { label: "NS", result: "win", description: "Schneider win" },
       "schneider-loss": { label: "NS", result: "loss", description: "Schneider loss" },
       schwarz: { label: "NT", result: "win", description: "No Tricks / Schwarz win" },
-      "schwarz-loss": { label: "NT", result: "loss", description: "No Tricks / Schwarz loss" }
+      "schwarz-loss": { label: "NT", result: "loss", description: "No Tricks / Schwarz loss" },
+      leaster: { label: "L", result: "leaster", description: "Leaster" }
     };
     const badges = [];
     const outcomeBadge = outcomeBadges[hand.outcome];
@@ -1441,10 +1558,13 @@
       let cardClass = "";
       let badgeHtml = "";
 
-      if (state.roles.pickerId === playerId) {
+      if (isLeasterOutcome(currentOutcome()) && state.roles.pickerId === playerId) {
+        cardClass = "leaster";
+        badgeHtml = `<div class="role-badge badge-leaster">Leaster</div>`;
+      } else if (state.roles.pickerId === playerId) {
         cardClass = "picker";
         badgeHtml = `<div class="role-badge badge-picker">Picker</div>`;
-      } else if (state.roles.partnerId === playerId) {
+      } else if (!isLeasterOutcome(currentOutcome()) && state.roles.partnerId === playerId) {
         cardClass = "partner";
         badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
       } else if (isSatOut(i)) {
@@ -1504,7 +1624,7 @@
         let val = state.historyShowTotals ? totals[playerId] || 0 : hand.deltas[playerId] || 0;
         let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
         if (hand.pickerId === playerId) {
-          cls += " history-picker-cell";
+          cls += isLeasterOutcome(hand.outcome) ? " history-leaster-cell" : " history-picker-cell";
         } else if (hand.partnerId === playerId) {
           cls += " history-partner-cell";
         }
