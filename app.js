@@ -1663,7 +1663,10 @@
 
     // Render History Table
     const historyOrderButton = document.getElementById("historyOrderButton");
-    historyOrderButton.textContent = state.historyNewestFirst ? "Oldest First" : "Newest First";
+    const historyOrderAction = state.historyNewestFirst ? "Show oldest first" : "Show newest first";
+    historyOrderButton.textContent = state.historyNewestFirst ? "↑" : "↓";
+    historyOrderButton.setAttribute("aria-label", historyOrderAction);
+    historyOrderButton.title = historyOrderAction;
     const historyScoreModeButton = document.getElementById("historyScoreModeButton");
     historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hands" : "Show Totals";
     const tbody = document.getElementById("tableBody");

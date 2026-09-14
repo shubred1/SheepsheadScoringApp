@@ -716,6 +716,12 @@
       font-size: 0.85rem;
       white-space: nowrap;
     }
+    .history-order-button {
+      min-width: 40px;
+      width: 40px;
+      padding-left: 0;
+      padding-right: 0;
+    }
     .submit-hand-button {
       display: block;
       width: min(100%, 260px);
