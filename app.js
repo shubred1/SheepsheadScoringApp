@@ -1207,36 +1207,23 @@
 
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
-    const mode = gameMode();
-    const count = state.playerCount;
+    const activePlayerCount = state.playerCount - fixedSatIds().length;
+    const sittingSelectionsRequired = Math.max(0, activePlayerCount - state.handed);
 
-    if (mode === "three") {
-      instruction.textContent = count === 4
-        ? "Tap players to select the picker and sitting player."
-        : "Tap a player to select the picker.";
-      return;
-    }
-
-    if (mode === "cut-throat") {
-      instruction.textContent = count === 5
-        ? "Tap players to select the picker and sitting player."
-        : "Tap a player to select the picker.";
-      return;
-    }
-
-    if (mode === "partners") {
-      instruction.textContent = count === 5
-        ? "Tap players to select the picker, partner, and sitting player."
-        : "Tap players to select the picker and partner.";
-      return;
-    }
-
-    if (count === 5) {
-      instruction.textContent = "Tap players to select the picker and partner.";
-    } else if (count === 6) {
-      instruction.textContent = "Tap players to select the picker, partner, and sitting player.";
+    if (hasPartnerRole()) {
+      if (sittingSelectionsRequired === 0) {
+        instruction.textContent = "Tap players to select the picker and partner.";
+      } else if (sittingSelectionsRequired === 1) {
+        instruction.textContent = "Tap players to select the picker, partner, and sitting player.";
+      } else {
+        instruction.textContent = "Tap players to select the picker, partner, and sitting players.";
+      }
+    } else if (sittingSelectionsRequired === 0) {
+      instruction.textContent = "Tap a player to select the picker.";
+    } else if (sittingSelectionsRequired === 1) {
+      instruction.textContent = "Tap players to select the picker and sitting player.";
     } else {
-      instruction.textContent = "Tap players to select the picker, partner, and sitting players.";
+      instruction.textContent = "Tap players to select the picker and sitting players.";
     }
   }
 
