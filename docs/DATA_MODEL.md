@@ -1,0 +1,45 @@
+# Data Model
+
+All data is JSON in localStorage under `sheepshead_scorekeeper_data`.
+
+At the top level:
+
+```text
+{
+  dataVersion: 3,
+  preferences: { theme: "dark" | "light" },
+  games: Game[],
+  activeGameId: string | null
+}
+```
+
+`Game` contains:
+
+- `id`, `name`, `createdAt`, `updatedAt`
+- `mode`: `three`, `cut-throat`, `partners`, or `five`
+- `handed`: derived active-player target (`3`, `4`, or `5`) retained alongside `mode`
+- `playerCount`, `players`, and `fixedSatIds`
+- `doubleOnBump`, `noTrickPartnerDoesntLose`
+- `roles`: `{ pickerId, partnerId, satIds }` for the in-progress hand
+- `history`: `Hand[]`
+- `historyNewestFirst` and `historyShowTotals`
+
+A `Player` is `{ id, name }`. IDs are generated with a `player-` prefix and remain stable when the array is reordered. The active players are the first `playerCount` entries; the app retains up to eight player records for future additions.
+
+A `Hand` is stored as:
+
+```text
+{
+  id,
+  pickerId,
+  partnerId,
+  satIds,
+  outcome,
+  multiplier,
+  deltas: { [playerId]: number }
+}
+```
+
+`pickerId` is also the Leaster winner when `outcome` is `leaster`; `partnerId` is `null` for Leaster. `satIds` records the players sitting for that hand. `deltas` is keyed by stable player ID, not player-array index. This is why reorder must not rewrite history and why totals remain historically correct after seating changes.
+
+The runtime normalizes older compatible game objects, including deriving `mode` from legacy `handed` values. A missing, unparsable, or incompatible `dataVersion`/shape triggers the implemented compatibility reset: a new empty app data object is saved and the user sees the storage-updated notice. Do not raise `dataVersion` casually; that path replaces saved app data under this key.

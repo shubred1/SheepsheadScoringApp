@@ -1,0 +1,56 @@
+# Scoring Rules
+
+This document describes the app's implemented scoring, not generic Sheepshead rules.
+
+## Game types, players, and roles
+
+| Game type | Valid player counts | Roles |
+| --- | --- | --- |
+| 3-Handed | 3, 4 | Picker only |
+| 4-Handed Cut Throat | 4, 5 | Picker only |
+| 4-Handed Partners | 4, 5 | Picker plus optional partner |
+| 5-Handed | 5, 6, 7, 8 | Picker plus optional partner |
+
+Sitting-player count is `playerCount - handed`. Fixed Skip players stay sitting; other sitters rotate after a submitted hand. Sitting players receive no hand delta. In picker-only modes, tapping another eligible player moves the picker in Cut Throat; the normal selection state also supports filling missing sit slots. Partner-capable modes use the normal picker/optional-partner interaction.
+
+Outcomes stored in each hand are `win`, `schneider`, `schwarz`, `loss`, `schneider-loss`, `schwarz-loss`, and `leaster`. Multipliers are 1, 2, 4, 8, or 16 and multiply the final base values.
+
+## Standard outcomes
+
+For picker-alone hands (all 3-Handed and Cut Throat hands, plus a Partners/5-Handed hand with no partner), each active defender receives the applicable defender value and the picker receives the balancing opposite total:
+
+| Outcome | Defender base value |
+| --- | --- |
+| Win | -1 |
+| Schneider win | -2 |
+| No Tricks / Schwarz win | -3 |
+| Loss | +1 × bump factor |
+| Schneidered loss | +2 × bump factor |
+| No Tricks Taken loss | +3 × bump factor |
+
+For 5-Handed with a partner, the picker/partner/defender bases are respectively `+2/+1/-1`, `+4/+2/-2`, and `+6/+3/-3` for win, Schneider, and Schwarz. Losses reverse those signs and use the bump factor.
+
+For 4-Handed Partners with a partner, picker and partner score equally and defenders score the equal opposite: ±1 standard, ±2 Schneider, ±3 Schwarz. Loss outcomes use the bump factor; wins do not. If no partner is selected, the app uses the picker-alone balancing method above.
+
+## Rule settings
+
+`Double on the bump` is enabled for every game type. When on, the bump factor is 2; otherwise it is 1. It affects standard loss, Schneidered loss, and No Tricks Taken loss, including 4-Handed Partners loss outcomes. It does not affect wins or Leaster.
+
+`No trick partner doesn't lose` is enabled only for 5-Handed. For a 5-Handed No Tricks Taken loss with a partner, the partner receives 0 and the picker is adjusted to preserve zero-sum scoring. The setting is disabled and ignored outside 5-Handed, even if stale stored data says it is true.
+
+## Leaster
+
+Leaster requires exactly one selected active, non-sitting, non-Skip winner. The winner is held in `pickerId`, but rendered as a purple **Leaster** role. There is no partner. Selection can move to another eligible player; sit-out interaction remains available.
+
+For `N` active non-sitting players, every non-winner gets `-1 × multiplier` and the winner gets `(N - 1) × multiplier`. Sitting/Skip players get 0. Leaster ignores both rule settings.
+
+## History details
+
+The `★` Hand History column uses stored `outcome` and `multiplier`, not inferred deltas:
+
+- `NS`: Schneider (green when picker won, red when picker lost)
+- `NT`: No Tricks / Schwarz (green when picker won, red when picker lost)
+- `L`: Leaster (purple)
+- `2x`, `4x`, `8x`, or `16x`: neutral multiplier badge
+
+An outcome badge and multiplier badge stack in one compact cell. Standard 1× hands have no result badge.
