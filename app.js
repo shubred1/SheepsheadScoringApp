@@ -835,7 +835,7 @@
                 onchange="updateModalSitCheckboxes()"
                 ${fixed.includes(player.id) ? "checked" : ""}
               />
-              Skip
+              Sit indefinitely
             </label>
           ` : ""}
         </div>
