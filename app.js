@@ -508,39 +508,69 @@
     document.getElementById("noTrickPartnerSetting").classList.toggle("disabled", noTrickPartnerCheckbox.disabled);
   }
 
-  function updateOutcomeOptions() {
-    if (isPartnersGame()) {
-      const doubleFactor = state.doubleOnBump ? 2 : 1;
-      document.querySelector("#outcomeSelect option[value='win']").textContent = "Win - Standard (+1 / +1)";
-      document.querySelector("#outcomeSelect option[value='schneider']").textContent = "Win - Schneider (+2 / +2)";
-      document.querySelector("#outcomeSelect option[value='schwarz']").textContent = "Win - No Tricks / Schwarz (+3 / +3)";
-      document.querySelector("#outcomeSelect option[value='loss']").textContent =
-        `${state.doubleOnBump ? "Loss - Double Bump" : "Loss - Bump"} (${-1 * doubleFactor} / ${-1 * doubleFactor})`;
-      document.querySelector("#outcomeSelect option[value='schneider-loss']").textContent =
-        `Loss - Schneidered (${-2 * doubleFactor} / ${-2 * doubleFactor})`;
-      document.querySelector("#outcomeSelect option[value='schwarz-loss']").textContent =
-        `Loss - No Tricks Taken (${-3 * doubleFactor} / ${-3 * doubleFactor})`;
-      return;
-    }
-    const doubleFactor = state.doubleOnBump && doubleOnBumpAllowed() ? 2 : 1;
-    const lossPicker = -2 * doubleFactor;
-    const lossPartner = -1 * doubleFactor;
-    const schneiderPicker = -4 * doubleFactor;
-    const schneiderPartner = -2 * doubleFactor;
-    const noTrickDefender = 3 * doubleFactor;
-    const noTrickPartnerDoesntLose = noTrickPartnerRuleAllowed() && state.noTrickPartnerDoesntLose;
-    const noTrickPicker = noTrickPartnerDoesntLose ? -3 * noTrickDefender : -6 * doubleFactor;
-    const noTrickPartner = noTrickPartnerDoesntLose ? 0 : -3 * doubleFactor;
+  function formatOutcomePoints(value) {
+    return value > 0 ? `+${value}` : String(value);
+  }
 
-    document.querySelector("#outcomeSelect option[value='win']").textContent = "Win - Standard (+2 / +1)";
-    document.querySelector("#outcomeSelect option[value='schneider']").textContent = "Win - Schneider (+4 / +2)";
-    document.querySelector("#outcomeSelect option[value='schwarz']").textContent = "Win - No Tricks / Schwarz (+6 / +3)";
-    document.querySelector("#outcomeSelect option[value='loss']").textContent =
-      `${state.doubleOnBump ? "Loss - Double Bump" : "Loss - Bump"} (${lossPicker} / ${lossPartner})`;
-    document.querySelector("#outcomeSelect option[value='schneider-loss']").textContent =
-      `Loss - Schneidered (${schneiderPicker} / ${schneiderPartner})`;
-    document.querySelector("#outcomeSelect option[value='schwarz-loss']").textContent =
-      `Loss - No Tricks Taken (${noTrickPicker} / ${noTrickPartner})`;
+  function outcomeLabelContext(roles, selectedSatIds) {
+    const activeIds = activePlayerIds().filter(id => !selectedSatIds.includes(id));
+    const selectedPartnerId = hasPartnerRole() && activeIds.includes(roles.partnerId)
+      ? roles.partnerId
+      : null;
+    const pickerId = activeIds.includes(roles.pickerId)
+      ? roles.pickerId
+      : activeIds.find(id => id !== selectedPartnerId) || activeIds[0] || null;
+    const partnerId = selectedPartnerId !== pickerId ? selectedPartnerId : null;
+    return { pickerId, partnerId };
+  }
+
+  function outcomeOptionLabel(outcome, roles, selectedSatIds) {
+    const names = {
+      win: "Win - Standard",
+      schneider: "Win - Schneider",
+      schwarz: "Win - No Tricks / Schwarz",
+      loss: state.doubleOnBump ? "Loss - Double Bump" : "Loss - Bump",
+      "schneider-loss": "Loss - Schneidered",
+      "schwarz-loss": "Loss - No Tricks Taken",
+      leaster: "Leaster"
+    };
+    const { pickerId, partnerId } = outcomeLabelContext(roles, selectedSatIds);
+    if (pickerId === null) {
+      return names[outcome];
+    }
+    const effectivePartnerId = isLeasterOutcome(outcome) ? null : partnerId;
+    const deltas = calculateHand({
+      picker: pickerId,
+      partner: effectivePartnerId,
+      sats: selectedSatIds,
+      outcome,
+      multiplier: 1,
+      gameSettings: state
+    });
+    const points = [formatOutcomePoints(deltas[pickerId])];
+    if (effectivePartnerId !== null) {
+      points.push(formatOutcomePoints(deltas[effectivePartnerId]));
+    }
+    return `${names[outcome]} (${points.join(" / ")})`;
+  }
+
+  function updateOutcomeSelectOptions(select, roles, selectedSatIds) {
+    ["win", "schneider", "schwarz", "leaster", "loss", "schneider-loss", "schwarz-loss"].forEach(outcome => {
+      const option = select.querySelector(`option[value='${outcome}']`);
+      if (option) {
+        option.textContent = outcomeOptionLabel(outcome, roles, selectedSatIds);
+      }
+    });
+  }
+
+  function updateOutcomeOptions() {
+    updateOutcomeSelectOptions(document.getElementById("outcomeSelect"), state.roles, satIds());
+  }
+
+  function updateEditOutcomeOptions() {
+    if (editHandDraft) {
+      updateOutcomeSelectOptions(document.getElementById("editOutcomeSelect"), editHandDraft, editHandDraft.satIds);
+    }
   }
 
   function calculateHand({ picker, partner, sats, outcome, multiplier, gameSettings }) {
@@ -1389,6 +1419,7 @@
   }
 
   function renderEditHandPlayers() {
+    updateEditOutcomeOptions();
     const grid = document.getElementById("editHandPlayersGrid");
     const count = state.playerCount;
     grid.style.setProperty("--mobile-player-columns", Math.ceil(count / 2));
@@ -1534,6 +1565,7 @@
   }
 
   function updateStandings() {
+    updateOutcomeOptions();
     const count = state.playerCount;
     const players = activePlayers();
     const totals = {};
