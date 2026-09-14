@@ -359,6 +359,14 @@
     #modalGameTypeField {
       margin-bottom: 12px;
     }
+    .modal-help-text {
+      margin: 8px 0 6px;
+      color: var(--subtext);
+      font-size: 0.85rem;
+    }
+    .modal-help-text[hidden] {
+      display: none;
+    }
     .modal-player-list {
       display: grid;
       grid-template-columns: 1fr;

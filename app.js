@@ -364,6 +364,7 @@
     gameNameInput.required = false;
     document.getElementById("modalGameTypeField").hidden = false;
     document.getElementById("modalRuleSettings").hidden = false;
+    document.getElementById("playerReorderHelp").hidden = true;
     document.getElementById("modalHanded").value = gameMode(state);
     const playerCount = populateModalPlayerCountOptions(gameMode(state), defaultPlayerCountForMode(gameMode(state)));
     document.getElementById("addPlayerButton").hidden = true;
@@ -388,6 +389,7 @@
     document.getElementById("modalGameTypeField").hidden = true;
     document.getElementById("modalRuleSettings").hidden = false;
     document.getElementById("addPlayerButton").hidden = false;
+    document.getElementById("playerReorderHelp").hidden = false;
     updateRuleSettingsInputs();
     updateRuleSettingsAvailability(gameMode(state));
     modalPlayerDrafts = state.players.map(normalizePlayer);
