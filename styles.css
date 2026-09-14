@@ -153,9 +153,13 @@
       grid-template-columns: minmax(0, 3fr) minmax(90px, 1fr);
     }
     #outcomeSelect option,
-    #editOutcomeSelect option {
+    #multiplierSelect option,
+    #editOutcomeSelect option,
+    #editMultiplierSelect option {
       color: var(--text);
       background-color: var(--field-bg);
+      padding: 7px 10px;
+      line-height: 1.45;
     }
     #outcomeSelect option.outcome-option-win,
     #editOutcomeSelect option.outcome-option-win {
