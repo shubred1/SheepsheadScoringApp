@@ -100,6 +100,14 @@
     return outcome === "leaster";
   }
 
+  function isMosterOutcome(outcome) {
+    return outcome === "moster";
+  }
+
+  function isSinglePlayerOutcome(outcome) {
+    return isLeasterOutcome(outcome) || isMosterOutcome(outcome);
+  }
+
   function currentOutcome() {
     return document.getElementById("outcomeSelect").value;
   }
@@ -532,13 +540,14 @@
       loss: state.doubleOnBump ? "Loss - Double Bump" : "Loss - Bump",
       "schneider-loss": "Loss - Schneidered",
       "schwarz-loss": "Loss - No Tricks Taken",
-      leaster: "Leaster"
+      leaster: "Leaster",
+      moster: "Moster"
     };
     const { pickerId, partnerId } = outcomeLabelContext(roles, selectedSatIds);
     if (pickerId === null) {
       return names[outcome];
     }
-    const effectivePartnerId = isLeasterOutcome(outcome) ? null : partnerId;
+    const effectivePartnerId = isSinglePlayerOutcome(outcome) ? null : partnerId;
     const deltas = calculateHand({
       picker: pickerId,
       partner: effectivePartnerId,
@@ -555,7 +564,7 @@
   }
 
   function updateOutcomeSelectOptions(select, roles, selectedSatIds) {
-    ["win", "schneider", "schwarz", "leaster", "loss", "schneider-loss", "schwarz-loss"].forEach(outcome => {
+    ["win", "schneider", "schwarz", "leaster", "moster", "loss", "schneider-loss", "schwarz-loss"].forEach(outcome => {
       const option = select.querySelector(`option[value='${outcome}']`);
       if (option) {
         option.textContent = outcomeOptionLabel(outcome, roles, selectedSatIds);
@@ -580,12 +589,16 @@
     const bumpFactor = gameSettings.doubleOnBump && doubleOnBumpAllowed(gameSettings) ? 2 : 1;
     let basePicker = 2, basePartner = 1, baseDef = -1;
 
-    if (isLeasterOutcome(outcome)) {
+    if (isSinglePlayerOutcome(outcome)) {
       const activePlayerIdsForHand = playerIds.filter(id => !sats.includes(id));
+      const selectedPlayerValue = (activePlayerIdsForHand.length - 1) * multiplier;
+      const otherPlayerValue = 1 * multiplier;
       activePlayerIdsForHand.forEach(id => {
-        deltas[id] = id === picker
-          ? (activePlayerIdsForHand.length - 1) * multiplier
-          : -1 * multiplier;
+        if (isLeasterOutcome(outcome)) {
+          deltas[id] = id === picker ? selectedPlayerValue : -otherPlayerValue;
+        } else {
+          deltas[id] = id === picker ? -selectedPlayerValue : otherPlayerValue;
+        }
       });
       return deltas;
     }
@@ -1163,13 +1176,13 @@
   }
 
   function isHandReadyToSubmit() {
-    const leasterIsReady = !isLeasterOutcome(currentOutcome()) || (
+    const singlePlayerOutcomeIsReady = !isSinglePlayerOutcome(currentOutcome()) || (
       state.roles.partnerId === null &&
       activePlayerIds().includes(state.roles.pickerId) &&
       !satIds().includes(state.roles.pickerId) &&
       !fixedSatIds().includes(state.roles.pickerId)
     );
-    return state.roles.pickerId !== null && leasterIsReady && satIds().length === sittingPlayerCount();
+    return state.roles.pickerId !== null && singlePlayerOutcomeIsReady && satIds().length === sittingPlayerCount();
   }
 
   function updateSubmitButton() {
@@ -1190,8 +1203,10 @@
 
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
-    if (isLeasterOutcome(currentOutcome())) {
-      instruction.textContent = "Tap a player to select the Leaster winner.";
+    if (isSinglePlayerOutcome(currentOutcome())) {
+      instruction.textContent = isLeasterOutcome(currentOutcome())
+        ? "Tap a player to select the Leaster winner."
+        : "Tap a player to select the Moster loser.";
       return;
     }
     instruction.textContent = hasPartnerRole()
@@ -1199,7 +1214,7 @@
       : "Tap a player to assign Picker.";
   }
 
-  function normalizeLeasterRoles() {
+  function normalizeSinglePlayerOutcomeRoles() {
     const selectedIds = [state.roles.pickerId, state.roles.partnerId];
     const eligibleIds = activePlayerIds().filter(id => !satIds().includes(id) && !fixedSatIds().includes(id));
     state.roles.pickerId = selectedIds.find(id => eligibleIds.includes(id)) || null;
@@ -1207,8 +1222,8 @@
   }
 
   function handleOutcomeChange() {
-    if (isLeasterOutcome(currentOutcome())) {
-      normalizeLeasterRoles();
+    if (isSinglePlayerOutcome(currentOutcome())) {
+      normalizeSinglePlayerOutcomeRoles();
     }
     saveState();
     updateStandings();
@@ -1223,7 +1238,7 @@
       return;
     }
 
-    if (isLeasterOutcome(currentOutcome())) {
+    if (isSinglePlayerOutcome(currentOutcome())) {
       const sittingCount = sittingPlayerCount();
       const currentSatIds = satIds();
       state.roles.partnerId = null;
@@ -1298,7 +1313,7 @@
     editHandIndex = historyIndex;
     editHandDraft = {
       pickerId: hand.pickerId,
-      partnerId: !isLeasterOutcome(hand.outcome) && hasPartnerRole() && hand.partnerId !== undefined ? hand.partnerId : null,
+      partnerId: !isSinglePlayerOutcome(hand.outcome) && hasPartnerRole() && hand.partnerId !== undefined ? hand.partnerId : null,
       satIds: Array.isArray(hand.satIds) ? hand.satIds.slice() : [],
       outcome: hand.outcome || "win",
       multiplier: hand.multiplier || 1
@@ -1327,7 +1342,7 @@
     editHandDraft.satIds = validPlayerIds(ids).slice(0, sittingPlayerCount());
   }
 
-  function normalizeEditLeasterRoles() {
+  function normalizeEditSinglePlayerOutcomeRoles() {
     const selectedIds = [editHandDraft.pickerId, editHandDraft.partnerId];
     const eligibleIds = activePlayerIds().filter(id => !editHandDraft.satIds.includes(id) && !fixedSatIds().includes(id));
     editHandDraft.pickerId = selectedIds.find(id => eligibleIds.includes(id)) || null;
@@ -1338,8 +1353,8 @@
     if (!editHandDraft) {
       return;
     }
-    if (isLeasterOutcome(currentEditOutcome())) {
-      normalizeEditLeasterRoles();
+    if (isSinglePlayerOutcome(currentEditOutcome())) {
+      normalizeEditSinglePlayerOutcomeRoles();
     }
     renderEditHandPlayers();
   }
@@ -1353,7 +1368,7 @@
       return;
     }
 
-    if (isLeasterOutcome(currentEditOutcome())) {
+    if (isSinglePlayerOutcome(currentEditOutcome())) {
       if (isFixedSat(index)) {
         return;
       }
@@ -1431,13 +1446,15 @@
       let badgeHtml = "";
 
       const playerId = playerIdAt(i);
-      if (isLeasterOutcome(currentEditOutcome()) && editHandDraft.pickerId === playerId) {
-        cardClass = "leaster";
-        badgeHtml = `<div class="role-badge badge-leaster">Leaster</div>`;
+      if (isSinglePlayerOutcome(currentEditOutcome()) && editHandDraft.pickerId === playerId) {
+        const outcome = currentEditOutcome();
+        const roleName = isLeasterOutcome(outcome) ? "Leaster" : "Moster";
+        cardClass = outcome;
+        badgeHtml = `<div class="role-badge badge-${outcome}">${roleName}</div>`;
       } else if (editHandDraft.pickerId === playerId) {
         cardClass = "picker";
         badgeHtml = `<div class="role-badge badge-picker">Picker</div>`;
-      } else if (!isLeasterOutcome(currentEditOutcome()) && editHandDraft.partnerId === playerId) {
+      } else if (!isSinglePlayerOutcome(currentEditOutcome()) && editHandDraft.partnerId === playerId) {
         cardClass = "partner";
         badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
       } else if (editDraftHasSat(i)) {
@@ -1467,7 +1484,7 @@
     const hand = state.history[editHandIndex];
     const outcome = document.getElementById("editOutcomeSelect").value;
     const multiplier = parseInt(document.getElementById("editMultiplierSelect").value);
-    const partnerId = !isLeasterOutcome(outcome) && hasPartnerRole() && editHandDraft.partnerId !== null ? editHandDraft.partnerId : null;
+    const partnerId = !isSinglePlayerOutcome(outcome) && hasPartnerRole() && editHandDraft.partnerId !== null ? editHandDraft.partnerId : null;
     const satIdsForHand = editHandDraft.satIds.slice();
     const deltas = calculateHand({
       picker: editHandDraft.pickerId,
@@ -1504,7 +1521,7 @@
 
     const outcome = document.getElementById("outcomeSelect").value;
     const mult = parseInt(document.getElementById("multiplierSelect").value);
-    const effectivePartnerId = !isLeasterOutcome(outcome) && hasPartnerRole() && partnerId !== null ? partnerId : null;
+    const effectivePartnerId = !isSinglePlayerOutcome(outcome) && hasPartnerRole() && partnerId !== null ? partnerId : null;
     const deltas = calculateHand({
       picker: pickerId,
       partner: effectivePartnerId,
@@ -1546,7 +1563,8 @@
       "schneider-loss": { label: "NS", result: "loss", description: "Schneider loss" },
       schwarz: { label: "NT", result: "win", description: "No Tricks / Schwarz win" },
       "schwarz-loss": { label: "NT", result: "loss", description: "No Tricks / Schwarz loss" },
-      leaster: { label: "L", result: "leaster", description: "Leaster" }
+      leaster: { label: "L", result: "leaster", description: "Leaster" },
+      moster: { label: "M", result: "moster", description: "Moster" }
     };
     const badges = [];
     const outcomeBadge = outcomeBadges[hand.outcome];
@@ -1594,13 +1612,15 @@
       let cardClass = "";
       let badgeHtml = "";
 
-      if (isLeasterOutcome(currentOutcome()) && state.roles.pickerId === playerId) {
-        cardClass = "leaster";
-        badgeHtml = `<div class="role-badge badge-leaster">Leaster</div>`;
+      if (isSinglePlayerOutcome(currentOutcome()) && state.roles.pickerId === playerId) {
+        const outcome = currentOutcome();
+        const roleName = isLeasterOutcome(outcome) ? "Leaster" : "Moster";
+        cardClass = outcome;
+        badgeHtml = `<div class="role-badge badge-${outcome}">${roleName}</div>`;
       } else if (state.roles.pickerId === playerId) {
         cardClass = "picker";
         badgeHtml = `<div class="role-badge badge-picker">Picker</div>`;
-      } else if (!isLeasterOutcome(currentOutcome()) && state.roles.partnerId === playerId) {
+      } else if (!isSinglePlayerOutcome(currentOutcome()) && state.roles.partnerId === playerId) {
         cardClass = "partner";
         badgeHtml = `<div class="role-badge badge-partner">Partner</div>`;
       } else if (isSatOut(i)) {
@@ -1660,7 +1680,7 @@
         let val = state.historyShowTotals ? totals[playerId] || 0 : hand.deltas[playerId] || 0;
         let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
         if (hand.pickerId === playerId) {
-          cls += isLeasterOutcome(hand.outcome) ? " history-leaster-cell" : " history-picker-cell";
+          cls += isSinglePlayerOutcome(hand.outcome) ? ` history-${hand.outcome}-cell` : " history-picker-cell";
         } else if (hand.partnerId === playerId) {
           cls += " history-partner-cell";
         }

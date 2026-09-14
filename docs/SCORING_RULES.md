@@ -13,7 +13,7 @@ This document describes the app's implemented scoring, not generic Sheepshead ru
 
 Sitting-player count is `playerCount - handed`. Fixed Skip players stay sitting; other sitters rotate after a submitted hand. Sitting players receive no hand delta. In picker-only modes, tapping another eligible player moves the picker in Cut Throat; the normal selection state also supports filling missing sit slots. Partner-capable modes use the normal picker/optional-partner interaction.
 
-Outcomes stored in each hand are `win`, `schneider`, `schwarz`, `loss`, `schneider-loss`, `schwarz-loss`, and `leaster`. Multipliers are 1, 2, 4, 8, or 16 and multiply the final base values.
+Outcomes stored in each hand are `win`, `schneider`, `schwarz`, `loss`, `schneider-loss`, `schwarz-loss`, `leaster`, and `moster`. Multipliers are 1, 2, 4, 8, or 16 and multiply the final base values.
 
 ## Standard outcomes
 
@@ -34,15 +34,17 @@ For 4-Handed Partners with a partner, picker and partner score equally and defen
 
 ## Rule settings
 
-`Double on the bump` is enabled for every game type. When on, the bump factor is 2; otherwise it is 1. It affects standard loss, Schneidered loss, and No Tricks Taken loss, including 4-Handed Partners loss outcomes. It does not affect wins or Leaster.
+`Double on the bump` is enabled for every game type. When on, the bump factor is 2; otherwise it is 1. It affects standard loss, Schneidered loss, and No Tricks Taken loss, including 4-Handed Partners loss outcomes. It does not affect wins, Leaster, or Moster.
 
 `No trick partner doesn't lose` is enabled only for 5-Handed. For a 5-Handed No Tricks Taken loss with a partner, the partner receives 0 and the picker is adjusted to preserve zero-sum scoring. The setting is disabled and ignored outside 5-Handed, even if stale stored data says it is true.
 
-## Leaster
+## Leaster and Moster
 
 Leaster requires exactly one selected active, non-sitting, non-Skip winner. The winner is held in `pickerId`, but rendered as a purple **Leaster** role. There is no partner. Selection can move to another eligible player; sit-out interaction remains available.
 
 For `N` active non-sitting players, every non-winner gets `-1 × multiplier` and the winner gets `(N - 1) × multiplier`. Sitting/Skip players get 0. Leaster ignores both rule settings.
+
+Moster uses the same single-player selection, `pickerId` storage, purple styling, and sitting behavior, but the selected player loses. For `N` active non-sitting players, the selected player gets `-(N - 1) × multiplier` and every other player gets `+1 × multiplier`. Sitting/Skip players get 0. Moster ignores both rule settings.
 
 ## History details
 
@@ -51,6 +53,7 @@ The `★` Hand History column uses stored `outcome` and `multiplier`, not inferr
 - `NS`: Schneider (green when picker won, red when picker lost)
 - `NT`: No Tricks / Schwarz (green when picker won, red when picker lost)
 - `L`: Leaster (purple)
+- `M`: Moster (purple)
 - `2x`, `4x`, `8x`, or `16x`: neutral multiplier badge
 
 An outcome badge and multiplier badge stack in one compact cell. Standard 1× hands have no result badge.

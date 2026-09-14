@@ -7,7 +7,7 @@ Current features:
 - Four game types: 3-Handed, 4-Handed Cut Throat, 4-Handed Partners, and 5-Handed.
 - Multiple independent saved games, with an active-game name below the header and a Games modal for switching or deleting games.
 - Player naming, seating-order reordering, supported player additions, and Skip/sit rotation.
-- Current-hand roles, configurable rule settings, Leaster, multipliers, scoring history, Edit Hand, and Undo Last Hand.
+- Current-hand roles, configurable rule settings, Leaster, Moster, multipliers, scoring history, Edit Hand, and Undo Last Hand.
 - Hand History supports oldest/newest ordering, hand/totals views, role highlighting, and a compact `★` details column with outcome/multiplier badges.
 - Browser-local persistence and installable/offline PWA support.
 

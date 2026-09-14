@@ -40,6 +40,6 @@ A `Hand` is stored as:
 }
 ```
 
-`pickerId` is also the Leaster winner when `outcome` is `leaster`; `partnerId` is `null` for Leaster. `satIds` records the players sitting for that hand. `deltas` is keyed by stable player ID, not player-array index. This is why reorder must not rewrite history and why totals remain historically correct after seating changes.
+`pickerId` is also the selected player for Leaster (`outcome: "leaster"`) and Moster (`outcome: "moster"`); `partnerId` is `null` for both. `satIds` records the players sitting for that hand. `deltas` is keyed by stable player ID, not player-array index. This is why reorder must not rewrite history and why totals remain historically correct after seating changes.
 
 The runtime normalizes older compatible game objects, including deriving `mode` from legacy `handed` values. A missing, unparsable, or incompatible `dataVersion`/shape triggers the implemented compatibility reset: a new empty app data object is saved and the user sees the storage-updated notice. Do not raise `dataVersion` casually; that path replaces saved app data under this key.
