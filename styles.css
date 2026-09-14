@@ -60,10 +60,17 @@
       border-radius: 6px;
     }
     .active-game-name {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
       margin: -8px 0 14px;
       color: var(--accent);
       font-size: 1rem;
       font-weight: 600;
+    }
+    .active-game-type {
+      font-size: 0.85rem;
+      font-weight: 400;
     }
     h1 {
       margin: 0;

@@ -1592,7 +1592,9 @@
     players.forEach(player => {
       totals[player.id] = 0;
     });
-    document.getElementById("activeGameName").textContent = hasSavedGame() ? displayGameName(state) : "";
+    document.getElementById("activeGameName").innerHTML = hasSavedGame()
+      ? `<span>${escapeAttribute(displayGameName(state))}</span><span class="active-game-type">${escapeAttribute(gameTypeLabel(state))}</span>`
+      : "";
     updateRoleInstruction();
 
     state.history.forEach(hand => {
