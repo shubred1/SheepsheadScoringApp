@@ -89,7 +89,7 @@
   }
 
   function doubleOnBumpAllowed(game = state) {
-    return gameMode(game) !== "partners";
+    return true;
   }
 
   function noTrickPartnerRuleAllowed(game = state) {
@@ -502,7 +502,7 @@
   function updateRuleSettingsAvailability(mode = gameMode(state)) {
     const doubleOnBumpCheckbox = document.getElementById("doubleOnBumpCheckbox");
     const noTrickPartnerCheckbox = document.getElementById("noTrickPartnerCheckbox");
-    doubleOnBumpCheckbox.disabled = mode === "partners";
+    doubleOnBumpCheckbox.disabled = false;
     noTrickPartnerCheckbox.disabled = mode !== "five";
     document.getElementById("doubleOnBumpSetting").classList.toggle("disabled", doubleOnBumpCheckbox.disabled);
     document.getElementById("noTrickPartnerSetting").classList.toggle("disabled", noTrickPartnerCheckbox.disabled);
@@ -510,12 +510,16 @@
 
   function updateOutcomeOptions() {
     if (isPartnersGame()) {
+      const doubleFactor = state.doubleOnBump ? 2 : 1;
       document.querySelector("#outcomeSelect option[value='win']").textContent = "Win - Standard (+1 / +1)";
       document.querySelector("#outcomeSelect option[value='schneider']").textContent = "Win - Schneider (+2 / +2)";
       document.querySelector("#outcomeSelect option[value='schwarz']").textContent = "Win - No Tricks / Schwarz (+3 / +3)";
-      document.querySelector("#outcomeSelect option[value='loss']").textContent = "Loss - Bump (-1 / -1)";
-      document.querySelector("#outcomeSelect option[value='schneider-loss']").textContent = "Loss - Schneidered (-2 / -2)";
-      document.querySelector("#outcomeSelect option[value='schwarz-loss']").textContent = "Loss - No Tricks Taken (-3 / -3)";
+      document.querySelector("#outcomeSelect option[value='loss']").textContent =
+        `${state.doubleOnBump ? "Loss - Double Bump" : "Loss - Bump"} (${-1 * doubleFactor} / ${-1 * doubleFactor})`;
+      document.querySelector("#outcomeSelect option[value='schneider-loss']").textContent =
+        `Loss - Schneidered (${-2 * doubleFactor} / ${-2 * doubleFactor})`;
+      document.querySelector("#outcomeSelect option[value='schwarz-loss']").textContent =
+        `Loss - No Tricks Taken (${-3 * doubleFactor} / ${-3 * doubleFactor})`;
       return;
     }
     const doubleFactor = state.doubleOnBump && doubleOnBumpAllowed() ? 2 : 1;
@@ -560,7 +564,7 @@
       const value = outcome === "schneider" || outcome === "schneider-loss" ? 2
         : outcome === "schwarz" || outcome === "schwarz-loss" ? 3 : 1;
       const attackersWin = !outcome.endsWith("loss");
-      const attackerPoints = (attackersWin ? value : -value) * multiplier;
+      const attackerPoints = (attackersWin ? value : -value * bumpFactor) * multiplier;
       const defenderPoints = -attackerPoints;
       playerIds.forEach(id => {
         if (id === picker || id === partner) deltas[id] = attackerPoints;
