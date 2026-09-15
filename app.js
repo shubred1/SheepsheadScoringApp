@@ -2,7 +2,6 @@
   const APP_VERSION = self.SHEEPSHEAD_APP_VERSION;
   const DATA_VERSION = 3;
   const MAX_PLAYERS = 8;
-  const RECENT_HISTORY_LIMIT = 5;
 
   let appData = null;
   let state = null;
@@ -1774,8 +1773,7 @@
       players,
       newestFirst: true,
       showTotals: true,
-      editable: false,
-      limit: RECENT_HISTORY_LIMIT
+      editable: false
     });
 
     renderHistoryTable({
