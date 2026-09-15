@@ -652,6 +652,42 @@
     updateOutcomeSelectOptions(document.getElementById("outcomeSelect"), state.roles, satIds());
   }
 
+  function renderTabletHandControlSegments(selectId, containerId) {
+    const select = document.getElementById(selectId);
+    const container = document.getElementById(containerId);
+    if (!select || !container) return;
+
+    container.replaceChildren();
+    Array.from(select.options).forEach(option => {
+      const button = document.createElement("button");
+      const isSelected = option.value === select.value;
+      button.type = "button";
+      button.className = "tablet-segment-button";
+      button.textContent = option.textContent;
+      button.disabled = option.disabled;
+      button.classList.toggle("is-selected", isSelected);
+      button.setAttribute("aria-pressed", String(isSelected));
+      button.addEventListener("click", () => selectTabletHandControlValue(selectId, option.value));
+      container.appendChild(button);
+    });
+  }
+
+  function renderTabletHandControls() {
+    renderTabletHandControlSegments("outcomeSelect", "tabletOutcomeSegments");
+    renderTabletHandControlSegments("multiplierSelect", "tabletMultiplierSegments");
+  }
+
+  function selectTabletHandControlValue(selectId, value) {
+    const select = document.getElementById(selectId);
+    if (!select || select.value === value) return;
+    select.value = value;
+    if (selectId === "outcomeSelect") {
+      handleOutcomeChange();
+    } else {
+      renderTabletHandControls();
+    }
+  }
+
   function updateEditOutcomeOptions() {
     if (editHandDraft) {
       updateOutcomeSelectOptions(document.getElementById("editOutcomeSelect"), editHandDraft, editHandDraft.satIds);
@@ -1758,6 +1794,7 @@
 
   function updateStandings() {
     updateOutcomeOptions();
+    renderTabletHandControls();
     const count = state.playerCount;
     const players = activePlayers();
     const totals = {};

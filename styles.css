@@ -244,6 +244,9 @@
       grid-template-columns: minmax(0, 3fr) minmax(90px, 1fr);
       margin-top: 12px;
     }
+    .tablet-hand-controls {
+      display: none;
+    }
     #outcomeSelect option,
     #multiplierSelect option,
     #editOutcomeSelect option,
@@ -879,6 +882,9 @@
       }
     }
     @media (orientation: landscape) and (min-width: 900px) {
+      #mainView.container {
+        max-width: 1400px;
+      }
       #mainView {
         display: grid;
         grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
@@ -887,6 +893,7 @@
           "header header"
           "game-name game-name"
           "scoring history";
+        column-gap: 24px;
       }
       #mainView .app-header {
         grid-area: header;
@@ -901,6 +908,7 @@
       }
       #mainView .game-section {
         grid-area: scoring;
+        align-self: end;
       }
       #mainView .history-section {
         grid-area: history;
@@ -914,6 +922,51 @@
       }
       #mainView .totals-grid {
         grid-template-columns: repeat(var(--mobile-player-columns, 3), minmax(0, 1fr));
+      }
+      #mainView .hand-controls {
+        display: none;
+      }
+      #mainView .tablet-hand-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .tablet-hand-control-group {
+        min-width: 0;
+      }
+      .tablet-segmented-options {
+        display: grid;
+        gap: 5px;
+      }
+      button.tablet-segment-button {
+        width: 100%;
+        min-height: 31px;
+        margin: 0;
+        padding: 6px 8px;
+        background: var(--field-bg);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        line-height: 1.15;
+        text-align: left;
+        white-space: normal;
+      }
+      button.tablet-segment-button:hover,
+      button.tablet-segment-button:focus-visible {
+        border-color: var(--accent);
+        opacity: 1;
+      }
+      button.tablet-segment-button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      button.tablet-segment-button.is-selected {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--button-text);
       }
     }
     @media (max-height: 480px) {
