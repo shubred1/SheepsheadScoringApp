@@ -44,12 +44,12 @@
       flex-direction: column;
       align-items: center;
     }
+    [hidden] {
+      display: none !important;
+    }
     .container {
       width: 100%;
       max-width: 900px;
-    }
-    .app-view[hidden] {
-      display: none;
     }
     .full-history-view {
       min-height: calc(100vh - 32px);
