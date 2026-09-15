@@ -672,6 +672,11 @@
       padding: 8px;
       border-bottom: 1px solid var(--border);
     }
+    .recent-history-newest-row td {
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 35%, transparent),
+                  inset 0 -1px 0 color-mix(in srgb, var(--accent) 18%, transparent);
+    }
     th.history-details-header,
     td.history-details-cell {
       width: 1%;

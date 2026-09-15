@@ -12,6 +12,7 @@
   let editHandDraft = null;
   let pendingDeleteGameId = null;
   let currentView = "main";
+  let shouldScrollRecentHistoryToTop = false;
   let shouldShowCompatibilityNotice = false;
   let shouldOpenNewGameOnFirstRun = false;
 
@@ -1576,6 +1577,7 @@
     document.getElementById("outcomeSelect").selectedIndex = 0;
     document.getElementById("multiplierSelect").selectedIndex = 0;
     state.updatedAt = nowIso();
+    shouldScrollRecentHistoryToTop = true;
     saveState();
     updateStandings();
   }
@@ -1631,11 +1633,13 @@
     });
   }
 
-  function renderHistoryHeader({ headerId, players, sortable }) {
+  function renderHistoryHeader({ headerId, players, sortable, showHandNumber }) {
     const th = document.getElementById(headerId);
     if (!th) return;
 
-    if (sortable) {
+    if (!showHandNumber) {
+      th.innerHTML = '<th class="history-details-header" aria-label="Hand details">★</th>';
+    } else if (sortable) {
       const historyOrderArrow = state.historyNewestFirst ? "↓" : "↑";
       const historyOrderLabel = state.historyNewestFirst
         ? "Currently newest first. Show oldest first"
@@ -1669,9 +1673,11 @@
     newestFirst = false,
     showTotals = true,
     editable = false,
+    showHandNumber = true,
+    highlightNewest = false,
     limit = null
   }) {
-    renderHistoryHeader({ headerId, players, sortable });
+    renderHistoryHeader({ headerId, players, sortable, showHandNumber });
 
     const tbody = document.getElementById(bodyId);
     if (!tbody) return;
@@ -1689,7 +1695,11 @@
       const handNumberCell = editable
         ? `<button class="inline-button" type="button" onclick="openEditHandModal(${handNumber - 1})">${handNumber}</button>`
         : handNumber;
-      let tr = `<tr><td>${handNumberCell}</td>`;
+      const rowClass = highlightNewest && handNumber === state.history.length ? ' class="recent-history-newest-row"' : "";
+      let tr = `<tr${rowClass}>`;
+      if (showHandNumber) {
+        tr += `<td>${handNumberCell}</td>`;
+      }
       tr += `<td class="history-details-cell">${renderHandDetailBadges(hand)}</td>`;
       for (let i = 0; i < players.length; i++) {
         const playerId = playerIdAt(i);
@@ -1773,8 +1783,18 @@
       players,
       newestFirst: true,
       showTotals: true,
-      editable: false
+      editable: false,
+      showHandNumber: false,
+      highlightNewest: true
     });
+
+    if (shouldScrollRecentHistoryToTop) {
+      const recentHistoryTable = document.querySelector(".recent-history-table-wrapper");
+      if (recentHistoryTable) {
+        recentHistoryTable.scrollTop = 0;
+      }
+      shouldScrollRecentHistoryToTop = false;
+    }
 
     renderHistoryTable({
       headerId: "fullTableHeader",
