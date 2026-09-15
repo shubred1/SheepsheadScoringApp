@@ -818,7 +818,7 @@
     }
     .history-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 8px;
@@ -908,9 +908,15 @@
       }
       #mainView .game-section {
         grid-area: scoring;
+        display: flex;
+        min-height: 0;
+        flex-direction: column;
       }
       #mainView .history-section {
         grid-area: history;
+      }
+      #mainView .history-section > .history-header {
+        margin-bottom: 17px;
       }
       #mainView.tablet-history-position-left {
         grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
@@ -966,6 +972,11 @@
         background: var(--accent);
         border-color: var(--accent);
         color: var(--button-text);
+      }
+      #mainView .submit-hand-button {
+        flex: 0 0 auto;
+        margin-top: auto;
+        margin-bottom: 0;
       }
     }
     @media (max-height: 480px) {
