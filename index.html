@@ -88,13 +88,13 @@
 
 <div class="container app-view full-history-view" id="fullHistoryView" hidden>
   <div class="full-history-topbar">
-    <button class="btn-secondary back-button" type="button" onclick="closeFullHistoryView()">Back</button>
     <div class="history-title">
       <label style="margin-bottom: 0; font-weight: bold;">Hand History</label>
       <div class="instruction-text history-helper">Tap a hand number to edit the result.</div>
     </div>
     <div class="history-actions">
       <button class="btn-secondary history-toggle-button" type="button" onclick="toggleHistoryScoreMode()" id="historyScoreModeButton">Show Totals</button>
+      <button class="btn-secondary history-toggle-button" type="button" onclick="toggleHistoryOrder()" id="historyOrderButton">Newest First</button>
     </div>
   </div>
   <div class="table-wrapper full-history-table-wrapper">
@@ -104,6 +104,9 @@
       </thead>
       <tbody id="fullTableBody"></tbody>
     </table>
+  </div>
+  <div class="full-history-done-bar">
+    <button type="button" onclick="closeFullHistoryView()">Done</button>
   </div>
 </div>
 

@@ -1663,29 +1663,12 @@
     });
   }
 
-  function renderHistoryHeader({ headerId, players, sortable, showHandNumber }) {
+  function renderHistoryHeader({ headerId, players, showHandNumber }) {
     const th = document.getElementById(headerId);
     if (!th) return;
 
     if (!showHandNumber) {
       th.innerHTML = '<th class="history-details-header" aria-label="Hand details">★</th>';
-    } else if (sortable) {
-      const historyOrderArrow = state.historyNewestFirst ? "↓" : "↑";
-      const historyOrderLabel = state.historyNewestFirst
-        ? "Currently newest first. Show oldest first"
-        : "Currently oldest first. Show newest first";
-      th.innerHTML = `
-        <th>
-          <button
-            class="history-sort-header-button"
-            type="button"
-            onclick="toggleHistoryOrder()"
-            aria-label="${historyOrderLabel}"
-            title="${historyOrderLabel}"
-          ># <span aria-hidden="true">${historyOrderArrow}</span></button>
-        </th>
-        <th class="history-details-header" aria-label="Hand details">★</th>
-      `;
     } else {
       th.innerHTML = '<th>#</th><th class="history-details-header" aria-label="Hand details">★</th>';
     }
@@ -1838,6 +1821,8 @@
 
     const historyScoreModeButton = document.getElementById("historyScoreModeButton");
     historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hands" : "Show Totals";
+    const historyOrderButton = document.getElementById("historyOrderButton");
+    historyOrderButton.textContent = state.historyNewestFirst ? "Newest First" : "Oldest First";
 
     updateSubmitButton();
   }
