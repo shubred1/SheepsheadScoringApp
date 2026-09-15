@@ -190,7 +190,7 @@
   function createAppData(theme = "dark") {
     return {
       dataVersion: DATA_VERSION,
-      preferences: { theme, historyPosition: "auto" },
+      preferences: { theme, historyPosition: "auto", tabletLandscapeHistoryPosition: "auto" },
       games: [],
       activeGameId: null
     };
@@ -198,6 +198,10 @@
 
   function normalizeHistoryPosition(position) {
     return ["auto", "top", "bottom"].includes(position) ? position : "auto";
+  }
+
+  function normalizeTabletLandscapeHistoryPosition(position) {
+    return ["auto", "left", "right"].includes(position) ? position : "auto";
   }
 
   function getActiveGame() {
@@ -284,6 +288,7 @@
       appData.preferences = appData.preferences || {};
       appData.preferences.theme = appData.preferences.theme === "light" ? "light" : "dark";
       appData.preferences.historyPosition = normalizeHistoryPosition(appData.preferences.historyPosition);
+      appData.preferences.tabletLandscapeHistoryPosition = normalizeTabletLandscapeHistoryPosition(appData.preferences.tabletLandscapeHistoryPosition);
       appData.games = Array.isArray(appData.games) ? appData.games : [];
       if (hasSavedGame()) {
         appData.activeGameId = appData.games.some(game => game.id === appData.activeGameId)
@@ -299,6 +304,7 @@
     normalizeCurrentGameState();
     applyTheme();
     applyHistoryPosition();
+    applyTabletLandscapeHistoryPosition();
     updateOutcomeOptions();
   }
 
@@ -523,6 +529,13 @@
     mainView.classList.add(`history-position-${normalizeHistoryPosition(appData.preferences.historyPosition)}`);
   }
 
+  function applyTabletLandscapeHistoryPosition() {
+    const mainView = document.getElementById("mainView");
+    if (!mainView) return;
+    mainView.classList.remove("tablet-history-position-auto", "tablet-history-position-left", "tablet-history-position-right");
+    mainView.classList.add(`tablet-history-position-${normalizeTabletLandscapeHistoryPosition(appData.preferences.tabletLandscapeHistoryPosition)}`);
+  }
+
   function updatePreferencesInputs() {
     updateThemeToggle();
     const position = normalizeHistoryPosition(appData.preferences.historyPosition);
@@ -531,11 +544,24 @@
       button.classList.toggle("is-selected", isSelected);
       button.setAttribute("aria-pressed", String(isSelected));
     });
+    const tabletPosition = normalizeTabletLandscapeHistoryPosition(appData.preferences.tabletLandscapeHistoryPosition);
+    document.querySelectorAll("[data-tablet-history-position]").forEach(button => {
+      const isSelected = button.dataset.tabletHistoryPosition === tabletPosition;
+      button.classList.toggle("is-selected", isSelected);
+      button.setAttribute("aria-pressed", String(isSelected));
+    });
   }
 
   function setHistoryPosition(position) {
     appData.preferences.historyPosition = normalizeHistoryPosition(position);
     applyHistoryPosition();
+    updatePreferencesInputs();
+    saveState();
+  }
+
+  function setTabletLandscapeHistoryPosition(position) {
+    appData.preferences.tabletLandscapeHistoryPosition = normalizeTabletLandscapeHistoryPosition(position);
+    applyTabletLandscapeHistoryPosition();
     updatePreferencesInputs();
     saveState();
   }

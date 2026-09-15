@@ -878,6 +878,44 @@
         margin-bottom: 0;
       }
     }
+    @media (orientation: landscape) and (min-width: 900px) {
+      #mainView {
+        display: grid;
+        grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+        grid-template-areas:
+          "header header"
+          "game-name game-name"
+          "scoring history";
+      }
+      #mainView .app-header {
+        grid-area: header;
+      }
+      #mainView .active-game-name {
+        grid-area: game-name;
+      }
+      #mainView .game-section,
+      #mainView .history-section {
+        order: initial;
+        min-width: 0;
+      }
+      #mainView .game-section {
+        grid-area: scoring;
+      }
+      #mainView .history-section {
+        grid-area: history;
+      }
+      #mainView.tablet-history-position-left {
+        grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
+        grid-template-areas:
+          "header header"
+          "game-name game-name"
+          "history scoring";
+      }
+      #mainView .totals-grid {
+        grid-template-columns: repeat(var(--mobile-player-columns, 3), minmax(0, 1fr));
+      }
+    }
     @media (max-height: 480px) {
       body {
         padding:
