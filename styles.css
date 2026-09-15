@@ -908,7 +908,6 @@
       }
       #mainView .game-section {
         grid-area: scoring;
-        align-self: end;
       }
       #mainView .history-section {
         grid-area: history;
