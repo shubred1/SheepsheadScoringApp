@@ -39,7 +39,15 @@
       background: var(--bg);
       color: var(--text);
       margin: 0;
-      padding: 16px;
+      height: 100vh;
+      height: 100dvh;
+      box-sizing: border-box;
+      overflow: hidden;
+      padding:
+        max(16px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(16px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -50,6 +58,24 @@
     .container {
       width: 100%;
       max-width: 900px;
+    }
+    #mainView {
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #mainView .app-header,
+    #mainView .active-game-name,
+    #mainView .game-section {
+      flex: 0 0 auto;
+    }
+    #mainView .history-section {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0;
     }
     .full-history-view {
       min-height: calc(100vh - 32px);
@@ -780,53 +806,82 @@
       margin: 10px auto 0;
       padding: 7px 10px;
       font-size: 0.85rem;
+      flex: 0 0 auto;
+      margin-bottom: 0;
     }
-    @media (max-width: 699px), (max-height: 560px) {
+    .recent-history-table-wrapper {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+    }
+    .recent-history-table-wrapper th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    @media (max-height: 480px) {
       body {
-        height: 100vh;
-        height: 100dvh;
-        box-sizing: border-box;
-        overflow: hidden;
         padding:
-          max(10px, env(safe-area-inset-top))
-          max(12px, env(safe-area-inset-right))
-          max(10px, env(safe-area-inset-bottom))
-          max(12px, env(safe-area-inset-left));
+          max(8px, env(safe-area-inset-top))
+          max(10px, env(safe-area-inset-right))
+          max(8px, env(safe-area-inset-bottom))
+          max(10px, env(safe-area-inset-left));
       }
-      #mainView {
-        height: 100%;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
+      .app-header {
+        margin: -2px -4px 8px;
+        padding: 6px 10px;
       }
-      #mainView .app-header,
-      #mainView .active-game-name,
-      #mainView .game-section {
-        flex: 0 0 auto;
+      h1 {
+        font-size: 1.3rem;
+      }
+      .active-game-name {
+        margin: -4px 0 8px;
+        font-size: 0.9rem;
+      }
+      .instruction-text {
+        margin-bottom: 6px;
+      }
+      .totals-grid {
+        gap: 5px;
+      }
+      .total-card {
+        padding: 6px 4px;
+        grid-template-rows: auto auto 14px;
+      }
+      .role-badge-slot {
+        min-height: 14px;
+        margin-top: 2px;
+      }
+      .total-name {
+        font-size: 0.78rem;
+      }
+      .total-score {
+        font-size: 1rem;
+        margin-top: 0;
+      }
+      .hand-controls {
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .hand-controls select {
+        padding: 7px 8px;
+      }
+      .submit-hand-button {
+        margin-top: 8px;
+        padding: 8px;
       }
       #mainView .history-section {
-        flex: 1 1 auto;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 0;
+        padding-top: 6px;
       }
-      .recent-history-table-wrapper {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow: auto;
-      }
-      .recent-history-table-wrapper th {
-        position: sticky;
-        top: 0;
-        z-index: 1;
+      .history-header {
+        margin-bottom: 4px;
       }
       .compact-link-button {
-        flex: 0 0 auto;
-        margin-bottom: 0;
+        margin-top: 6px;
+        padding: 6px 9px;
       }
     }
-    @media (max-height: 560px) {
+    @media (max-height: 360px) {
       body {
         height: auto;
         min-height: 100vh;
