@@ -2,6 +2,7 @@
   const APP_VERSION = self.SHEEPSHEAD_APP_VERSION;
   const DATA_VERSION = 3;
   const MAX_PLAYERS = 8;
+  const RECENT_HISTORY_LIMIT = 5;
 
   let appData = null;
   let state = null;
@@ -11,6 +12,7 @@
   let editHandIndex = null;
   let editHandDraft = null;
   let pendingDeleteGameId = null;
+  let currentView = "main";
   let shouldShowCompatibilityNotice = false;
   let shouldOpenNewGameOnFirstRun = false;
 
@@ -324,6 +326,22 @@
 
   function closeMenu() {
     document.getElementById("appMenu").hidden = true;
+  }
+
+  function showAppView(view) {
+    currentView = view;
+    document.getElementById("mainView").hidden = view !== "main";
+    document.getElementById("fullHistoryView").hidden = view !== "full-history";
+    updateStandings();
+  }
+
+  function openFullHistoryView() {
+    closeMenu();
+    showAppView("full-history");
+  }
+
+  function closeFullHistoryView() {
+    showAppView("main");
   }
 
   function populateModalPlayerCountOptions(mode, selectedCount) {
@@ -1595,6 +1613,101 @@
       : "";
   }
 
+  function historyRowsWithTotals(players) {
+    const runningTotals = {};
+    players.forEach(player => {
+      runningTotals[player.id] = 0;
+    });
+
+    return state.history.map((hand, hIdx) => {
+      players.forEach(player => {
+        runningTotals[player.id] += hand.deltas[player.id] || 0;
+      });
+
+      return {
+        hand,
+        handNumber: hIdx + 1,
+        totals: { ...runningTotals }
+      };
+    });
+  }
+
+  function renderHistoryHeader({ headerId, players, sortable }) {
+    const th = document.getElementById(headerId);
+    if (!th) return;
+
+    if (sortable) {
+      const historyOrderArrow = state.historyNewestFirst ? "↓" : "↑";
+      const historyOrderLabel = state.historyNewestFirst
+        ? "Currently newest first. Show oldest first"
+        : "Currently oldest first. Show newest first";
+      th.innerHTML = `
+        <th>
+          <button
+            class="history-sort-header-button"
+            type="button"
+            onclick="toggleHistoryOrder()"
+            aria-label="${historyOrderLabel}"
+            title="${historyOrderLabel}"
+          ># <span aria-hidden="true">${historyOrderArrow}</span></button>
+        </th>
+        <th class="history-details-header" aria-label="Hand details">★</th>
+      `;
+    } else {
+      th.innerHTML = '<th>#</th><th class="history-details-header" aria-label="Hand details">★</th>';
+    }
+
+    players.forEach((_, i) => {
+      th.innerHTML += `<th>${getDisplayName(i)}</th>`;
+    });
+  }
+
+  function renderHistoryTable({
+    headerId,
+    bodyId,
+    players,
+    sortable = false,
+    newestFirst = false,
+    showTotals = true,
+    editable = false,
+    limit = null
+  }) {
+    renderHistoryHeader({ headerId, players, sortable });
+
+    const tbody = document.getElementById(bodyId);
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    let historyRows = historyRowsWithTotals(players);
+    if (newestFirst) {
+      historyRows = historyRows.reverse();
+    }
+    if (limit !== null) {
+      historyRows = historyRows.slice(0, limit);
+    }
+
+    historyRows.forEach(({ hand, handNumber, totals }) => {
+      const handNumberCell = editable
+        ? `<button class="inline-button" type="button" onclick="openEditHandModal(${handNumber - 1})">${handNumber}</button>`
+        : handNumber;
+      let tr = `<tr><td>${handNumberCell}</td>`;
+      tr += `<td class="history-details-cell">${renderHandDetailBadges(hand)}</td>`;
+      for (let i = 0; i < players.length; i++) {
+        const playerId = playerIdAt(i);
+        let val = showTotals ? totals[playerId] || 0 : hand.deltas[playerId] || 0;
+        let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
+        if (hand.pickerId === playerId) {
+          cls += isSinglePlayerOutcome(hand.outcome) ? ` history-${hand.outcome}-cell` : " history-picker-cell";
+        } else if (hand.partnerId === playerId) {
+          cls += " history-partner-cell";
+        }
+        tr += `<td class="${cls}">${val > 0 ? '+' : ''}${val}</td>`;
+      }
+      tr += "</tr>";
+      tbody.innerHTML += tr;
+    });
+  }
+
   function updateStandings() {
     updateOutcomeOptions();
     const count = state.playerCount;
@@ -1654,69 +1767,29 @@
       `;
     }
 
-    // Render Table Header
-    const th = document.getElementById("tableHeader");
-    const historyOrderArrow = state.historyNewestFirst ? "↓" : "↑";
-    const historyOrderLabel = state.historyNewestFirst
-      ? "Currently newest first. Show oldest first"
-      : "Currently oldest first. Show newest first";
-    th.innerHTML = `
-      <th>
-        <button
-          class="history-sort-header-button"
-          type="button"
-          onclick="toggleHistoryOrder()"
-          aria-label="${historyOrderLabel}"
-          title="${historyOrderLabel}"
-        ># <span aria-hidden="true">${historyOrderArrow}</span></button>
-      </th>
-      <th class="history-details-header" aria-label="Hand details">★</th>
-    `;
-    for (let i = 0; i < count; i++) {
-      th.innerHTML += `<th>${getDisplayName(i)}</th>`;
-    }
+    // Render History Tables
+    renderHistoryTable({
+      headerId: "recentTableHeader",
+      bodyId: "recentTableBody",
+      players,
+      newestFirst: true,
+      showTotals: true,
+      editable: false,
+      limit: RECENT_HISTORY_LIMIT
+    });
 
-    // Render History Table
+    renderHistoryTable({
+      headerId: "fullTableHeader",
+      bodyId: "fullTableBody",
+      players,
+      sortable: true,
+      newestFirst: state.historyNewestFirst,
+      showTotals: state.historyShowTotals,
+      editable: true
+    });
+
     const historyScoreModeButton = document.getElementById("historyScoreModeButton");
     historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hands" : "Show Totals";
-    const tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
-    const runningTotals = {};
-    players.forEach(player => {
-      runningTotals[player.id] = 0;
-    });
-    const historyRows = state.history.map((hand, hIdx) => {
-      players.forEach(player => {
-        runningTotals[player.id] += hand.deltas[player.id] || 0;
-      });
-
-      return {
-        hand,
-        handNumber: hIdx + 1,
-        totals: { ...runningTotals }
-      };
-    });
-    if (state.historyNewestFirst) {
-      historyRows.reverse();
-    }
-
-    historyRows.forEach(({ hand, handNumber, totals }) => {
-      let tr = `<tr><td><button class="inline-button" type="button" onclick="openEditHandModal(${handNumber - 1})">${handNumber}</button></td>`;
-      tr += `<td class="history-details-cell">${renderHandDetailBadges(hand)}</td>`;
-      for (let i = 0; i < count; i++) {
-        const playerId = playerIdAt(i);
-        let val = state.historyShowTotals ? totals[playerId] || 0 : hand.deltas[playerId] || 0;
-        let cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
-        if (hand.pickerId === playerId) {
-          cls += isSinglePlayerOutcome(hand.outcome) ? ` history-${hand.outcome}-cell` : " history-picker-cell";
-        } else if (hand.partnerId === playerId) {
-          cls += " history-partner-cell";
-        }
-        tr += `<td class="${cls}">${val > 0 ? '+' : ''}${val}</td>`;
-      }
-      tr += "</tr>";
-      tbody.innerHTML += tr;
-    });
 
     updateSubmitButton();
   }

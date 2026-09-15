@@ -17,13 +17,14 @@
 </head>
 <body>
 
-<div class="container">
+<div class="container app-view" id="mainView">
   <div class="app-header">
     <h1><img class="title-icon" src="icons/icon-192.png" alt="Sheepshead" />Scorekeeper</h1>
     <div class="menu-wrapper">
       <button class="menu-button" type="button" onclick="toggleMenu()" aria-label="Menu">☰</button>
       <div class="menu-panel" id="appMenu" hidden>
         <button class="menu-item" type="button" onclick="openGamesModal()">Games</button>
+        <button class="menu-item" type="button" onclick="openFullHistoryView()">Hand History</button>
         <button class="menu-item" type="button" onclick="openSettingsModal()">Game Settings</button>
         <button class="menu-item" type="button" onclick="openUndoModal()">Undo Last Hand</button>
         <button class="menu-item" type="button" onclick="openThemeModal()">Theme</button>
@@ -67,25 +68,43 @@
     <button class="submit-hand-button" id="submitHandButton" onclick="submitPresetHand()" disabled>Submit Hand</button>
   </div>
 
-  <!-- Score History Table -->
+  <!-- Recent History Table -->
   <div class="card history-section">
     <div class="history-header">
       <div class="history-title">
-        <label style="margin-bottom: 0; font-weight: bold;">Hand History</label>
-        <div class="instruction-text history-helper">Tap a hand number to edit the result.</div>
-      </div>
-      <div class="history-actions">
-        <button class="btn-secondary history-toggle-button" type="button" onclick="toggleHistoryScoreMode()" id="historyScoreModeButton">Show Totals</button>
+        <label style="margin-bottom: 0; font-weight: bold;">Recent History</label>
       </div>
     </div>
     <div class="table-wrapper">
       <table>
         <thead>
-          <tr id="tableHeader"></tr>
+          <tr id="recentTableHeader"></tr>
         </thead>
-        <tbody id="tableBody"></tbody>
+        <tbody id="recentTableBody"></tbody>
       </table>
     </div>
+    <button class="btn-secondary compact-link-button" type="button" onclick="openFullHistoryView()">View Full History</button>
+  </div>
+</div>
+
+<div class="container app-view full-history-view" id="fullHistoryView" hidden>
+  <div class="full-history-topbar">
+    <button class="btn-secondary back-button" type="button" onclick="closeFullHistoryView()">Back</button>
+    <div class="history-title">
+      <label style="margin-bottom: 0; font-weight: bold;">Hand History</label>
+      <div class="instruction-text history-helper">Tap a hand number to edit the result.</div>
+    </div>
+    <div class="history-actions">
+      <button class="btn-secondary history-toggle-button" type="button" onclick="toggleHistoryScoreMode()" id="historyScoreModeButton">Show Totals</button>
+    </div>
+  </div>
+  <div class="table-wrapper full-history-table-wrapper">
+    <table>
+      <thead>
+        <tr id="fullTableHeader"></tr>
+      </thead>
+      <tbody id="fullTableBody"></tbody>
+    </table>
   </div>
 </div>
 

@@ -48,6 +48,29 @@
       width: 100%;
       max-width: 900px;
     }
+    .app-view[hidden] {
+      display: none;
+    }
+    .full-history-view {
+      min-height: calc(100vh - 32px);
+      display: flex;
+      flex-direction: column;
+    }
+    .full-history-topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .full-history-topbar .history-title {
+      flex: 1 1 auto;
+    }
+    .back-button {
+      width: auto;
+      margin-top: 0;
+      padding: 8px 10px;
+    }
     .app-header {
       display: flex;
       align-items: center;
@@ -601,6 +624,11 @@
     .table-wrapper {
       overflow-x: auto;
     }
+    .full-history-table-wrapper {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -745,6 +773,13 @@
       padding: 8px 10px;
       font-size: 0.85rem;
       white-space: nowrap;
+    }
+    .compact-link-button {
+      display: block;
+      width: auto;
+      margin: 10px auto 0;
+      padding: 7px 10px;
+      font-size: 0.85rem;
     }
     .submit-hand-button {
       display: block;
