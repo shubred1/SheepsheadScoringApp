@@ -187,6 +187,9 @@
       margin-bottom: 16px;
     }
     .game-section {
+      border-top: 1px solid var(--border);
+      margin-top: 16px;
+      padding-top: 9px;
       padding-bottom: 9px;
     }
     .history-section {
@@ -194,7 +197,12 @@
       padding-top: 9px;
     }
     @media (min-width: 700px) {
+      .active-game-name {
+        margin-bottom: 0;
+      }
       .game-section {
+        margin-top: 16px;
+        padding-top: 18px;
         padding-bottom: 18px;
       }
       .history-section {
@@ -878,6 +886,9 @@
       .submit-hand-button {
         margin-top: 8px;
         padding: 8px;
+      }
+      #mainView .game-section {
+        margin-top: 8px;
       }
       #mainView .history-section {
         padding-top: 6px;
