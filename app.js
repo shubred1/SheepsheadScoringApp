@@ -526,14 +526,17 @@
   function updatePreferencesInputs() {
     updateThemeToggle();
     const position = normalizeHistoryPosition(appData.preferences.historyPosition);
-    document.querySelectorAll("input[name='historyPosition']").forEach(input => {
-      input.checked = input.value === position;
+    document.querySelectorAll("[data-history-position]").forEach(button => {
+      const isSelected = button.dataset.historyPosition === position;
+      button.classList.toggle("is-selected", isSelected);
+      button.setAttribute("aria-pressed", String(isSelected));
     });
   }
 
   function setHistoryPosition(position) {
     appData.preferences.historyPosition = normalizeHistoryPosition(position);
     applyHistoryPosition();
+    updatePreferencesInputs();
     saveState();
   }
 

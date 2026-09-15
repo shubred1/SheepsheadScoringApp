@@ -180,19 +180,10 @@
   <div class="modal">
     <h2>Preferences</h2>
     <label class="edit-section-label">Hand History Position</label>
-    <div class="preference-radio-group">
-      <label class="preference-radio-label">
-        <input type="radio" name="historyPosition" value="auto" onchange="setHistoryPosition(this.value)" />
-        Auto
-      </label>
-      <label class="preference-radio-label">
-        <input type="radio" name="historyPosition" value="top" onchange="setHistoryPosition(this.value)" />
-        Top
-      </label>
-      <label class="preference-radio-label">
-        <input type="radio" name="historyPosition" value="bottom" onchange="setHistoryPosition(this.value)" />
-        Bottom
-      </label>
+    <div class="preference-segmented-control" role="group" aria-label="Hand History Position">
+      <button class="preference-segment" type="button" data-history-position="auto" onclick="setHistoryPosition('auto')">Auto</button>
+      <button class="preference-segment" type="button" data-history-position="top" onclick="setHistoryPosition('top')">Top</button>
+      <button class="preference-segment" type="button" data-history-position="bottom" onclick="setHistoryPosition('bottom')">Bottom</button>
     </div>
     <label class="edit-section-label">Theme</label>
     <label class="theme-toggle-label">
