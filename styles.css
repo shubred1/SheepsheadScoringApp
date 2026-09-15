@@ -159,6 +159,7 @@
     }
     .hand-controls {
       grid-template-columns: minmax(0, 3fr) minmax(90px, 1fr);
+      margin-top: 12px;
     }
     #outcomeSelect option,
     #multiplierSelect option,
