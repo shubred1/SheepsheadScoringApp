@@ -24,10 +24,10 @@
       <button class="menu-button" type="button" onclick="toggleMenu()" aria-label="Menu">☰</button>
       <div class="menu-panel" id="appMenu" hidden>
         <button class="menu-item" type="button" onclick="openGamesModal()">Games</button>
-        <button class="menu-item" type="button" onclick="openFullHistoryView()">Hand History</button>
         <button class="menu-item" type="button" onclick="openSettingsModal()">Game Settings</button>
         <button class="menu-item" type="button" onclick="openUndoModal()">Undo Last Hand</button>
-        <button class="menu-item" type="button" onclick="openThemeModal()">Theme</button>
+        <button class="menu-item" type="button" onclick="openFullHistoryView()">Hand History</button>
+        <button class="menu-item" type="button" onclick="openPreferencesModal()">Preferences</button>
         <button class="menu-item" type="button" onclick="openAboutModal()">About</button>
       </div>
     </div>
@@ -176,9 +176,25 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="themeModal" hidden>
+<div class="modal-backdrop" id="preferencesModal" hidden>
   <div class="modal">
-    <h2>Theme</h2>
+    <h2>Preferences</h2>
+    <label class="edit-section-label">Hand History Position</label>
+    <div class="preference-radio-group">
+      <label class="preference-radio-label">
+        <input type="radio" name="historyPosition" value="auto" onchange="setHistoryPosition(this.value)" />
+        Auto
+      </label>
+      <label class="preference-radio-label">
+        <input type="radio" name="historyPosition" value="top" onchange="setHistoryPosition(this.value)" />
+        Top
+      </label>
+      <label class="preference-radio-label">
+        <input type="radio" name="historyPosition" value="bottom" onchange="setHistoryPosition(this.value)" />
+        Bottom
+      </label>
+    </div>
+    <label class="edit-section-label">Theme</label>
     <label class="theme-toggle-label">
       <span id="themeToggleText">Dark mode</span>
       <span class="theme-switch">
@@ -187,7 +203,7 @@
       </span>
     </label>
     <div class="modal-actions single-action">
-      <button type="button" onclick="closeThemeModal()">Done</button>
+      <button type="button" onclick="closePreferencesModal()">Done</button>
     </div>
   </div>
 </div>

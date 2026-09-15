@@ -190,10 +190,14 @@
   function createAppData(theme = "dark") {
     return {
       dataVersion: DATA_VERSION,
-      preferences: { theme },
+      preferences: { theme, historyPosition: "auto" },
       games: [],
       activeGameId: null
     };
+  }
+
+  function normalizeHistoryPosition(position) {
+    return ["auto", "top", "bottom"].includes(position) ? position : "auto";
   }
 
   function getActiveGame() {
@@ -279,6 +283,7 @@
       appData = parsed;
       appData.preferences = appData.preferences || {};
       appData.preferences.theme = appData.preferences.theme === "light" ? "light" : "dark";
+      appData.preferences.historyPosition = normalizeHistoryPosition(appData.preferences.historyPosition);
       appData.games = Array.isArray(appData.games) ? appData.games : [];
       if (hasSavedGame()) {
         appData.activeGameId = appData.games.some(game => game.id === appData.activeGameId)
@@ -293,6 +298,7 @@
     }
     normalizeCurrentGameState();
     applyTheme();
+    applyHistoryPosition();
     updateOutcomeOptions();
   }
 
@@ -430,10 +436,10 @@
     openNewGameModal();
   }
 
-  function openThemeModal() {
+  function openPreferencesModal() {
     closeMenu();
-    updateThemeToggle();
-    document.getElementById("themeModal").hidden = false;
+    updatePreferencesInputs();
+    document.getElementById("preferencesModal").hidden = false;
   }
 
   function openUndoModal() {
@@ -461,8 +467,8 @@
     document.getElementById("settingsModal").hidden = true;
   }
 
-  function closeThemeModal() {
-    document.getElementById("themeModal").hidden = true;
+  function closePreferencesModal() {
+    document.getElementById("preferencesModal").hidden = true;
   }
 
   function closeUndoModal() {
@@ -508,6 +514,27 @@
 
   function applyTheme() {
     document.documentElement.dataset.theme = appData.preferences.theme;
+  }
+
+  function applyHistoryPosition() {
+    const mainView = document.getElementById("mainView");
+    if (!mainView) return;
+    mainView.classList.remove("history-position-auto", "history-position-top", "history-position-bottom");
+    mainView.classList.add(`history-position-${normalizeHistoryPosition(appData.preferences.historyPosition)}`);
+  }
+
+  function updatePreferencesInputs() {
+    updateThemeToggle();
+    const position = normalizeHistoryPosition(appData.preferences.historyPosition);
+    document.querySelectorAll("input[name='historyPosition']").forEach(input => {
+      input.checked = input.value === position;
+    });
+  }
+
+  function setHistoryPosition(position) {
+    appData.preferences.historyPosition = normalizeHistoryPosition(position);
+    applyHistoryPosition();
+    saveState();
   }
 
   function updateThemeToggle() {
