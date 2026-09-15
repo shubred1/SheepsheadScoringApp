@@ -26,7 +26,7 @@
         <button class="menu-item" type="button" onclick="openGamesModal()">Games</button>
         <button class="menu-item" type="button" onclick="openSettingsModal()">Game Settings</button>
         <button class="menu-item" type="button" onclick="openUndoModal()">Undo Last Hand</button>
-        <button class="menu-item" type="button" onclick="openFullHistoryView()">Hand History</button>
+        <button class="menu-item" type="button" onclick="openFullHistoryView()">View/Edit Hand History</button>
         <button class="menu-item" type="button" onclick="openPreferencesModal()">Preferences</button>
         <button class="menu-item" type="button" onclick="openAboutModal()">About</button>
       </div>
@@ -74,6 +74,7 @@
       <div class="history-title">
         <label style="margin-bottom: 0; font-weight: bold;">Recent History</label>
       </div>
+      <button class="btn-secondary compact-link-button" type="button" onclick="openFullHistoryView()">View/Edit Full History</button>
     </div>
     <div class="table-wrapper recent-history-table-wrapper">
       <table>
@@ -83,7 +84,6 @@
         <tbody id="recentTableBody"></tbody>
       </table>
     </div>
-    <button class="btn-secondary compact-link-button" type="button" onclick="openFullHistoryView()">View Full History</button>
   </div>
 </div>
 

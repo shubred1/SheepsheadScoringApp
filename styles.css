@@ -123,16 +123,23 @@
     }
     .active-game-name {
       display: flex;
-      align-items: baseline;
+      align-items: center;
+      justify-content: space-between;
       gap: 8px;
       margin: -8px 0 14px;
       color: var(--accent);
       font-size: 1rem;
       font-weight: 600;
     }
+    .active-game-name > span:first-child {
+      min-width: 0;
+    }
     .active-game-type {
       font-size: 0.85rem;
       font-weight: 400;
+      flex: 0 0 auto;
+      margin-left: auto;
+      text-align: right;
     }
     h1 {
       margin: 0;
@@ -837,6 +844,10 @@
     }
     .history-title {
       min-width: 0;
+    }
+    .history-header .compact-link-button {
+      margin: 0;
+      flex: 0 0 auto;
     }
     .history-helper {
       margin: 2px 0 0;
