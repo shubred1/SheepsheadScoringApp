@@ -1036,6 +1036,7 @@
     }
     @media (orientation: landscape) and (min-width: 900px) and (max-height: 672px) {
       #mainView .scoring-controls-layout {
+        container-type: size;
         grid-template-rows: auto;
         grid-template-areas:
           "outcome multiplier";
@@ -1051,11 +1052,8 @@
       #mainView .tablet-multiplier-options {
         grid-area: auto;
       }
-      #mainView .tablet-hand-control-group:first-child .tablet-segmented-options {
-        gap: clamp(2px, calc(4.166667dvh - 23px), 5px);
-      }
       #mainView .tablet-hand-control-group:first-child button.tablet-segment-button {
-        height: clamp(25px, calc(8.333333dvh - 25px), 31px);
+        height: clamp(25px, calc(12.5cqh - 7px), 31px);
         min-height: 0;
         overflow: hidden;
         text-overflow: ellipsis;
