@@ -1801,8 +1801,12 @@
     players.forEach(player => {
       totals[player.id] = 0;
     });
-    document.getElementById("activeGameName").innerHTML = hasSavedGame()
+    const hasActiveGame = hasSavedGame();
+    document.getElementById("activeGameName").innerHTML = hasActiveGame
       ? `<span>${escapeAttribute(displayGameName(state))}</span><span class="active-game-type">${escapeAttribute(gameTypeLabel(state))}</span>`
+      : "";
+    document.getElementById("tabletActiveGameInfo").textContent = hasActiveGame
+      ? `${displayGameName(state)} · ${gameTypeLabel(state)}`
       : "";
     updateRoleInstruction();
 

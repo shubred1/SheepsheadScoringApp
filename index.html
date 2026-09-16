@@ -20,6 +20,7 @@
 <div class="container app-view" id="mainView">
   <div class="app-header">
     <h1><img class="title-icon" src="icons/icon-192.png" alt="Sheepshead" />Scorekeeper</h1>
+    <div class="tablet-active-game-info" id="tabletActiveGameInfo"></div>
     <div class="menu-wrapper">
       <button class="menu-button" type="button" onclick="toggleMenu()" aria-label="Menu">☰</button>
       <div class="menu-panel" id="appMenu" hidden>
@@ -44,42 +45,46 @@
       Tap player cards to assign roles.
     </div>
     <div class="totals-grid" id="totalsGrid"></div>
-    <div class="grid hand-controls">
-      <div>
-        <label>Hand Outcome</label>
-        <select id="outcomeSelect" onchange="handleOutcomeChange()">
-          <option class="outcome-option-win" value="win">Win - Standard (+2 / +1)</option>
-          <option class="outcome-option-win" value="schneider">Win - Schneider (+4 / +2)</option>
-          <option class="outcome-option-win" value="schwarz">Win - No Tricks (+6 / +3)</option>
-          <option class="outcome-option-special" value="leaster">Leaster</option>
-          <option class="outcome-option-special" value="moster">Moster</option>
-          <option class="outcome-option-loss" value="loss">Loss - Double Bump (-4 / -2)</option>
-          <option class="outcome-option-loss" value="schneider-loss">Loss - Schneidered (-8 / -4)</option>
-          <option class="outcome-option-loss" value="schwarz-loss">Loss - No Tricks (-12 / -6)</option>
-        </select>
+    <div class="scoring-controls-layout">
+      <div class="grid hand-controls">
+        <div>
+          <label>Hand Outcome</label>
+          <select id="outcomeSelect" onchange="handleOutcomeChange()">
+            <option class="outcome-option-win" value="win">Win - Standard (+2 / +1)</option>
+            <option class="outcome-option-win" value="schneider">Win - Schneider (+4 / +2)</option>
+            <option class="outcome-option-win" value="schwarz">Win - No Tricks (+6 / +3)</option>
+            <option class="outcome-option-special" value="leaster">Leaster</option>
+            <option class="outcome-option-special" value="moster">Moster</option>
+            <option class="outcome-option-loss" value="loss">Loss - Double Bump (-4 / -2)</option>
+            <option class="outcome-option-loss" value="schneider-loss">Loss - Schneidered (-8 / -4)</option>
+            <option class="outcome-option-loss" value="schwarz-loss">Loss - No Tricks (-12 / -6)</option>
+          </select>
+        </div>
+        <div>
+          <label>Multiplier</label>
+          <select id="multiplierSelect">
+            <option value="1">1x</option>
+            <option value="2">2x</option>
+            <option value="4">4x</option>
+            <option value="8">8x</option>
+            <option value="16">16x</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label>Multiplier</label>
-        <select id="multiplierSelect">
-          <option value="1">1x</option>
-          <option value="2">2x</option>
-          <option value="4">4x</option>
-          <option value="8">8x</option>
-          <option value="16">16x</option>
-        </select>
+      <div class="tablet-hand-controls" aria-label="Hand controls">
+        <div class="tablet-hand-control-group">
+          <label>Hand Outcome</label>
+          <div class="tablet-segmented-options" id="tabletOutcomeSegments" role="group" aria-label="Hand Outcome"></div>
+        </div>
+        <div class="tablet-hand-control-group tablet-multiplier-control">
+          <div class="tablet-multiplier-options">
+            <label>Multiplier</label>
+            <div class="tablet-segmented-options" id="tabletMultiplierSegments" role="group" aria-label="Multiplier"></div>
+          </div>
+          <button class="submit-hand-button" id="submitHandButton" onclick="submitPresetHand()" disabled>Submit Hand</button>
+        </div>
       </div>
     </div>
-    <div class="tablet-hand-controls" aria-label="Hand controls">
-      <div class="tablet-hand-control-group">
-        <label>Hand Outcome</label>
-        <div class="tablet-segmented-options" id="tabletOutcomeSegments" role="group" aria-label="Hand Outcome"></div>
-      </div>
-      <div class="tablet-hand-control-group">
-        <label>Multiplier</label>
-        <div class="tablet-segmented-options" id="tabletMultiplierSegments" role="group" aria-label="Multiplier"></div>
-      </div>
-    </div>
-    <button class="submit-hand-button" id="submitHandButton" onclick="submitPresetHand()" disabled>Submit Hand</button>
   </div>
 
   <!-- Recent History Table -->

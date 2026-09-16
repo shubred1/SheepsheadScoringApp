@@ -145,6 +145,9 @@
       margin-left: auto;
       text-align: right;
     }
+    .tablet-active-game-info {
+      display: none;
+    }
     h1 {
       margin: 0;
       color: var(--accent);
@@ -245,7 +248,19 @@
       margin-top: 12px;
     }
     .tablet-hand-controls {
+      display: contents;
+    }
+    .tablet-hand-control-group {
       display: none;
+    }
+    .tablet-multiplier-control {
+      display: contents;
+    }
+    .tablet-multiplier-options {
+      display: none;
+    }
+    .scoring-controls-layout {
+      display: contents;
     }
     #outcomeSelect option,
     #multiplierSelect option,
@@ -888,18 +903,33 @@
       #mainView {
         display: grid;
         grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
-        grid-template-rows: auto auto minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
         grid-template-areas:
           "header header"
-          "game-name game-name"
           "scoring history";
         column-gap: 24px;
       }
       #mainView .app-header {
         grid-area: header;
+        margin-bottom: 8px;
       }
       #mainView .active-game-name {
-        grid-area: game-name;
+        display: none;
+      }
+      #mainView .tablet-active-game-info {
+        display: block;
+        position: absolute;
+        left: 50%;
+        max-width: calc(100% - 250px);
+        overflow: hidden;
+        color: var(--accent);
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        pointer-events: none;
+        transform: translateX(-50%);
       }
       #mainView .game-section,
       #mainView .history-section {
@@ -922,7 +952,6 @@
         grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
         grid-template-areas:
           "header header"
-          "game-name game-name"
           "history scoring";
       }
       #mainView .totals-grid {
@@ -931,13 +960,35 @@
       #mainView .hand-controls {
         display: none;
       }
-      #mainView .tablet-hand-controls {
+      #mainView .scoring-controls-layout {
         display: grid;
+        flex: 1 1 auto;
+        min-height: 0;
         grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-        gap: 12px;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        grid-template-areas:
+          "outcome multiplier"
+          ". ."
+          "submit submit";
+        column-gap: 12px;
         margin-top: 12px;
       }
+      #mainView .tablet-hand-controls {
+        display: contents;
+      }
       .tablet-hand-control-group {
+        display: block;
+        min-width: 0;
+      }
+      .tablet-hand-control-group:first-child {
+        grid-area: outcome;
+      }
+      .tablet-multiplier-control {
+        display: contents;
+      }
+      .tablet-multiplier-options {
+        display: block;
+        grid-area: multiplier;
         min-width: 0;
       }
       .tablet-segmented-options {
@@ -974,9 +1025,67 @@
         color: var(--button-text);
       }
       #mainView .submit-hand-button {
-        flex: 0 0 auto;
-        margin-top: auto;
+        grid-area: submit;
+        width: 100%;
+        margin: 0;
         margin-bottom: 0;
+      }
+    }
+    @media (orientation: landscape) and (min-width: 900px) and (max-height: 680px) {
+      #mainView .game-section {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      #mainView .score-hand-header {
+        margin-bottom: 4px;
+      }
+      #mainView .game-section .instruction-text {
+        margin-bottom: 6px;
+      }
+      #mainView .totals-grid {
+        gap: 5px;
+      }
+      #mainView .total-card {
+        padding: 6px 4px;
+        grid-template-rows: auto auto 14px;
+      }
+      #mainView .scoring-controls-layout {
+        grid-template-rows: auto;
+        grid-template-areas:
+          "outcome multiplier";
+        align-content: start;
+      }
+      #mainView .tablet-multiplier-control {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        grid-area: multiplier;
+        align-self: start;
+      }
+      #mainView .tablet-multiplier-options {
+        grid-area: auto;
+      }
+      #mainView .tablet-hand-control-group label,
+      #mainView .tablet-multiplier-options label {
+        margin-bottom: 2px;
+      }
+      #mainView .tablet-segmented-options {
+        gap: 2px;
+      }
+      #mainView button.tablet-segment-button {
+        min-height: 27px;
+        padding: 4px 6px;
+        font-size: 0.72rem;
+        line-height: 1.1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #mainView .submit-hand-button {
+        grid-area: auto;
+        align-self: start;
+        margin-top: 0;
+        min-height: 44px;
       }
     }
     @media (max-height: 480px) {
