@@ -1034,24 +1034,7 @@
         margin-bottom: 0;
       }
     }
-    @media (orientation: landscape) and (min-width: 900px) and (max-height: 680px) {
-      #mainView .game-section {
-        padding-top: 10px;
-        padding-bottom: 10px;
-      }
-      #mainView .score-hand-header {
-        margin-bottom: 4px;
-      }
-      #mainView .game-section .instruction-text {
-        margin-bottom: 6px;
-      }
-      #mainView .totals-grid {
-        gap: 5px;
-      }
-      #mainView .total-card {
-        padding: 6px 4px;
-        grid-template-rows: auto auto 14px;
-      }
+    @media (orientation: landscape) and (min-width: 900px) and (max-height: 672px) {
       #mainView .scoring-controls-layout {
         grid-template-rows: auto;
         grid-template-areas:
@@ -1068,18 +1051,12 @@
       #mainView .tablet-multiplier-options {
         grid-area: auto;
       }
-      #mainView .tablet-hand-control-group label,
-      #mainView .tablet-multiplier-options label {
-        margin-bottom: 2px;
+      #mainView .tablet-hand-control-group:first-child .tablet-segmented-options {
+        gap: clamp(2px, calc(4.166667dvh - 23px), 5px);
       }
-      #mainView .tablet-segmented-options {
-        gap: 2px;
-      }
-      #mainView button.tablet-segment-button {
-        min-height: 27px;
-        padding: 4px 6px;
-        font-size: 0.72rem;
-        line-height: 1.1;
+      #mainView .tablet-hand-control-group:first-child button.tablet-segment-button {
+        height: clamp(25px, calc(8.333333dvh - 25px), 31px);
+        min-height: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
