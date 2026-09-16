@@ -937,6 +937,7 @@
         margin-top: 8px;
         order: initial;
         padding-top: 0;
+        padding-bottom: 0;
         min-width: 0;
       }
       #mainView .game-section {
@@ -974,6 +975,7 @@
           ". ."
           "submit submit";
         column-gap: 12px;
+        row-gap: 5px;
         margin-top: 12px;
       }
       #mainView .tablet-hand-controls {
@@ -1047,6 +1049,7 @@
         flex-direction: column;
         grid-area: multiplier;
         align-self: stretch;
+        gap: 5px;
       }
       #mainView .tablet-multiplier-options {
         grid-area: auto;
