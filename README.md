@@ -6,6 +6,16 @@ A local-first Sheepshead scoring app designed for quick scorekeeping on phones a
 
 **Live app:** https://shubred1.github.io/SheepsheadScoringApp/
 
+## Installing The App
+
+### Android
+
+Open the app in Chrome while online, then use the browser menu and choose **Install app** or **Add to Home screen** when available.
+
+### iPhone And iPad
+
+Open the app in Safari while online, tap **Share**, then choose **Add to Home Screen**.
+
 ## How To Use
 
 1. Open the menu and create a new game.
@@ -63,16 +73,6 @@ Available preferences include:
 
 On supported tablet-sized landscape screens, the app uses a two-column layout so scoring controls and Recent History can remain visible together.
 
-## Installing The App
-
-### Android
-
-Open the app in Chrome while online, then use the browser menu and choose **Install app** or **Add to Home screen** when available.
-
-### iPhone And iPad
-
-Open the app in Safari while online, tap **Share**, then choose **Add to Home Screen**.
-
 ## Saved Data And Offline Use
 
 Scores, player names, settings, and theme preference are saved locally on the device/browser with `localStorage`. They are not synced between devices or browsers.
@@ -83,23 +83,53 @@ Because game data is stored locally, clearing the browser/app's site data can re
 
 ## Screenshots
 
-Add screenshots here once they are available.
-
-Suggested screenshots:
-
 ### Phone
+<!--
+<p align="center">
+  <img src="screenshots/phone-main-sm.png" alt="Phone scoring view" width="45%">
+  <img src="screenshots/phone-main-light-sm.png" alt="Phone history view" width="45%">
+</p>
+-->
 
-![Phone scoring view](screenshots/phone.png)
-
-### Tablet Portrait
-
-![Tablet portrait scoring view](screenshots/tablet-portrait.png)
+<table align="center">
+  <tr>
+    <td align="center">
+      <strong>Dark theme, hand history at top</strong>
+      <br>
+      <img src="screenshots/phone-main-sm.png" alt="Phone scoring view" width="90%">
+    </td>
+    <td align="center">
+      <strong>Light theme, hand history at bottom</strong>
+      <br>
+      <img src="screenshots/phone-main-light-sm.png" alt="Phone scoring view" width="90%">
+    </td>
+  </tr>
+</table>
 
 ### Tablet Landscape
 
-![Tablet landscape scoring view](screenshots/tablet-landscape.png)
+<!-- ![Tablet landscape scoring view](screenshots/tablet-main-landscape-sm.png) -->
 
-> If you use different filenames or locations, update the image paths above.
+<p align="center">
+  <img src="screenshots/tablet-main-landscape-sm.png" alt="Tablet landscape scoring view">
+</p>
+
+
+### Tablet Portrait
+
+<!-- ![Tablet portrait scoring view](screenshots/tablet-main-portrait-sm.png) -->
+
+<p align="center">
+  <img src="screenshots/tablet-main-portrait-sm.png" alt="Tablet portrait scoring view">
+</p>
+
+### Hand History Screen
+
+<h3 align="center">View and/or Edit the hand history</h3>
+
+<p align="center">
+  <img src="screenshots/tablet-hand-history-sm.png" alt="Hand History screen">
+</p>
 
 ## Development
 
