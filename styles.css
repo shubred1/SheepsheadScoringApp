@@ -933,7 +933,10 @@
       }
       #mainView .game-section,
       #mainView .history-section {
+        border-top: none;
+        margin-top: 8px;
         order: initial;
+        padding-top: 0;
         min-width: 0;
       }
       #mainView .game-section {
