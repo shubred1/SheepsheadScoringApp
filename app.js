@@ -333,12 +333,33 @@
 
   function toggleMenu() {
     const menu = document.getElementById("appMenu");
-    menu.hidden = !menu.hidden;
+    const menuButton = document.querySelector(".menu-button");
+    const isOpen = menu.hidden;
+    menu.hidden = !isOpen;
+    menuButton.setAttribute("aria-expanded", String(isOpen));
   }
 
   function closeMenu() {
-    document.getElementById("appMenu").hidden = true;
+    const menu = document.getElementById("appMenu");
+    const menuButton = document.querySelector(".menu-button");
+    menu.hidden = true;
+    menuButton.setAttribute("aria-expanded", "false");
   }
+
+  document.addEventListener("pointerdown", event => {
+    const menu = document.getElementById("appMenu");
+    const menuButton = document.querySelector(".menu-button");
+
+    if (!menu.hidden && !menu.contains(event.target) && !menuButton.contains(event.target)) {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !document.getElementById("appMenu").hidden) {
+      closeMenu();
+    }
+  });
 
   function showAppView(view) {
     currentView = view;
