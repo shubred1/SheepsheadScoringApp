@@ -30,7 +30,13 @@ The current scores are shown with the player cards as the game progresses.
 
 ## Games And Players
 
-The app supports multiple saved games on the same device/browser.
+### Game variations supported
+* 5-handed (up to 8 players)
+* 3-handed
+* 4-handed cut throat
+* 4-handed partners
+
+### The app supports multiple saved games on the same device/browser.
 
 From the menu you can:
 
