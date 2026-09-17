@@ -594,7 +594,12 @@
       justify-content: space-between;
       gap: 16px;
       margin-bottom: 0;
+      padding: 8px 10px;
+      background: var(--field-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
       color: var(--text);
+      cursor: pointer;
     }
     .theme-switch {
       position: relative;
