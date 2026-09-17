@@ -12,7 +12,7 @@
   let editHandDraft = null;
   let pendingDeleteGameId = null;
   let currentView = "main";
-  let shouldScrollRecentHistoryToBottom = false;
+  let shouldScrollRecentHistoryToNewest = false;
   let recentHistoryShowTotals = true;
   let shouldShowCompatibilityNotice = false;
   let shouldOpenNewGameOnFirstRun = false;
@@ -191,7 +191,12 @@
   function createAppData(theme = "dark") {
     return {
       dataVersion: DATA_VERSION,
-      preferences: { theme, historyPosition: "auto", tabletLandscapeHistoryPosition: "auto" },
+      preferences: {
+        theme,
+        historyPosition: "auto",
+        tabletLandscapeHistoryPosition: "auto",
+        recentHistoryNewestFirst: false
+      },
       games: [],
       activeGameId: null
     };
@@ -203,6 +208,10 @@
 
   function normalizeTabletLandscapeHistoryPosition(position) {
     return ["auto", "left", "right"].includes(position) ? position : "auto";
+  }
+
+  function normalizeRecentHistoryNewestFirst(value) {
+    return value === true;
   }
 
   function getActiveGame() {
@@ -290,6 +299,7 @@
       appData.preferences.theme = appData.preferences.theme === "light" ? "light" : "dark";
       appData.preferences.historyPosition = normalizeHistoryPosition(appData.preferences.historyPosition);
       appData.preferences.tabletLandscapeHistoryPosition = normalizeTabletLandscapeHistoryPosition(appData.preferences.tabletLandscapeHistoryPosition);
+      appData.preferences.recentHistoryNewestFirst = normalizeRecentHistoryNewestFirst(appData.preferences.recentHistoryNewestFirst);
       appData.games = Array.isArray(appData.games) ? appData.games : [];
       if (hasSavedGame()) {
         appData.activeGameId = appData.games.some(game => game.id === appData.activeGameId)
@@ -324,7 +334,7 @@
 
   function initGame() {
     loadState();
-    shouldScrollRecentHistoryToBottom = hasSavedGame();
+    shouldScrollRecentHistoryToNewest = hasSavedGame();
     updateStandings();
     if (shouldShowCompatibilityNotice) {
       document.getElementById("compatibilityModal").hidden = false;
@@ -608,6 +618,7 @@
       button.classList.toggle("is-selected", isSelected);
       button.setAttribute("aria-pressed", String(isSelected));
     });
+    updateRecentHistoryOrderToggle();
   }
 
   function setHistoryPosition(position) {
@@ -622,6 +633,23 @@
     applyTabletLandscapeHistoryPosition();
     updatePreferencesInputs();
     saveState();
+  }
+
+  function updateRecentHistoryOrderToggle() {
+    const toggle = document.getElementById("recentHistoryOrderToggle");
+    const text = document.getElementById("recentHistoryOrderText");
+    if (!toggle || !text) return;
+    const newestFirst = normalizeRecentHistoryNewestFirst(appData.preferences.recentHistoryNewestFirst);
+    toggle.checked = newestFirst;
+    text.textContent = newestFirst ? "Newest at top" : "Newest at bottom";
+  }
+
+  function toggleRecentHistoryOrder(useNewestFirst) {
+    appData.preferences.recentHistoryNewestFirst = useNewestFirst === true;
+    updateRecentHistoryOrderToggle();
+    shouldScrollRecentHistoryToNewest = true;
+    saveState();
+    updateStandings();
   }
 
   function updateThemeToggle() {
@@ -1732,7 +1760,7 @@
     document.getElementById("outcomeSelect").selectedIndex = 0;
     document.getElementById("multiplierSelect").selectedIndex = 0;
     state.updatedAt = nowIso();
-    shouldScrollRecentHistoryToBottom = true;
+    shouldScrollRecentHistoryToNewest = true;
     saveState();
     updateStandings();
   }
@@ -1924,19 +1952,21 @@
       headerId: "recentTableHeader",
       bodyId: "recentTableBody",
       players,
-      newestFirst: false,
+      newestFirst: normalizeRecentHistoryNewestFirst(appData.preferences.recentHistoryNewestFirst),
       showTotals: recentHistoryShowTotals,
       editable: false,
       showHandNumber: false,
       highlightNewest: true
     });
 
-    if (shouldScrollRecentHistoryToBottom) {
+    if (shouldScrollRecentHistoryToNewest) {
       const recentHistoryTable = document.querySelector(".recent-history-table-wrapper");
       if (recentHistoryTable) {
-        recentHistoryTable.scrollTop = recentHistoryTable.scrollHeight;
+        recentHistoryTable.scrollTop = normalizeRecentHistoryNewestFirst(appData.preferences.recentHistoryNewestFirst)
+          ? 0
+          : recentHistoryTable.scrollHeight;
       }
-      shouldScrollRecentHistoryToBottom = false;
+      shouldScrollRecentHistoryToNewest = false;
     }
 
     renderHistoryTable({

@@ -234,6 +234,14 @@
       <button class="preference-segment" type="button" data-tablet-history-position="left" onclick="setTabletLandscapeHistoryPosition('left')">Left</button>
       <button class="preference-segment" type="button" data-tablet-history-position="right" onclick="setTabletLandscapeHistoryPosition('right')">Right</button>
     </div>
+    <label class="preference-primary-label">Hand History Order</label>
+    <label class="theme-toggle-label">
+      <span id="recentHistoryOrderText">Newest at bottom</span>
+      <span class="theme-switch">
+        <input id="recentHistoryOrderToggle" type="checkbox" onchange="toggleRecentHistoryOrder(this.checked)" />
+        <span class="theme-switch-slider"></span>
+      </span>
+    </label>
   </div>
 </div>
 
