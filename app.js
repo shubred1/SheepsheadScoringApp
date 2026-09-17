@@ -367,7 +367,8 @@
     settingsModal: closeModal,
     gamesModal: closeGamesModal,
     preferencesModal: closePreferencesModal,
-    aboutModal: closeAboutModal
+    aboutModal: closeAboutModal,
+    undoModal: closeUndoModal
   };
 
   function closeDismissibleModal(id) {

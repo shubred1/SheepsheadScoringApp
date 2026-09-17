@@ -251,17 +251,18 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="undoModal" hidden>
+<div class="modal-backdrop" id="undoModal" data-dismiss-on-backdrop hidden>
   <div class="modal">
     <h2>Undo Last Hand</h2>
+    <button class="modal-close-button" type="button" onclick="closeUndoModal()" aria-label="Close">X</button>
     <div class="about-content">
       <p id="undoModalMessage">Remove the most recent hand from the history?</p>
     </div>
-    <div class="modal-actions" id="undoModalActions">
-      <button class="btn-secondary" type="button" onclick="closeUndoModal()">Cancel</button>
+    <div class="modal-actions single-action" id="undoModalActions">
       <button class="btn-danger" id="undoConfirmButton" type="button" onclick="confirmUndoLastHand()">Undo</button>
     </div>
   </div>
+</div>
 </div>
 
 <div class="modal-backdrop" id="editHandModal" hidden>
