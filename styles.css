@@ -433,6 +433,12 @@
       display: grid;
       gap: 8px;
     }
+    #gamesModal .games-list {
+      margin-top: 36px;
+    }
+    #gamesModal .modal-actions {
+      margin-top: 24px;
+    }
     .games-empty {
       color: var(--subtext);
       font-size: 0.92rem;
