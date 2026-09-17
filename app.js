@@ -1917,7 +1917,6 @@
     const historyScoreModeButton = document.getElementById("historyScoreModeButton");
     historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hands" : "Show Totals";
     const recentHistoryScoreModeButton = document.getElementById("recentHistoryScoreModeButton");
-    recentHistoryScoreModeButton.textContent = recentHistoryShowTotals ? "Totals" : "Hands";
     recentHistoryScoreModeButton.classList.toggle("is-totals", recentHistoryShowTotals);
     recentHistoryScoreModeButton.setAttribute("aria-pressed", String(recentHistoryShowTotals));
     recentHistoryScoreModeButton.setAttribute(
