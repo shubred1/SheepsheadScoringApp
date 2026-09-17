@@ -1,6 +1,6 @@
 # Product Decisions
 
-These are durable, implemented product choices rather than a feature roadmap.
+These are durable product choices; planned decisions are included when they guide future implementation.
 
 - Multiple saved games are first-class. New Game is a draft until **Start Game**; it does not create a saved game before then.
 - A Game Name belongs in both New Game and Game Settings. The active name appears below the app header. The date-based New Game placeholder is saved when the name field is left blank.
@@ -14,3 +14,9 @@ These are durable, implemented product choices rather than a feature roadmap.
 - Undo Last Hand is separate from Edit Hand. There is no arbitrary historical-hand deletion UI.
 - First run, and the state after the last game is deleted, opens a mandatory New Game modal.
 - The app favors local-first browser use: no account, sync, or server-side game state is required.
+
+## Planned: Round of Doublers
+
+- Round of Doublers will be a generic manual feature. The user chooses the number of upcoming hands, with an editable default that may be based on players currently in rotation.
+- Starting during an active round either stacks immediately (**Start Now**) or appends after it (**Add to End**); hand-specific multipliers stack as well.
+- Active doublers and hands remaining will be shown on the scoring screen. History will use existing effective multiplier badges, with no separate star indicator planned. The normal multiplier control remains per-hand, while doubler effects apply automatically.
