@@ -2000,6 +2000,16 @@
   initGame();
 
 if ("serviceWorker" in navigator) {
+  let reloadingForServiceWorkerController = false;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloadingForServiceWorkerController || !navigator.serviceWorker.controller) {
+      return;
+    }
+    reloadingForServiceWorkerController = true;
+    window.location.reload();
+  });
+
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/SheepsheadScoringApp/sw.js", {
       scope: "/SheepsheadScoringApp/",
