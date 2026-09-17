@@ -381,21 +381,23 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       margin: 0;
       padding: 0;
-      background: transparent;
-      color: var(--subtext);
-      border: 1px solid transparent;
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+      border-radius: 50%;
       font-size: 1.15rem;
+      font-weight: 700;
       line-height: 1;
     }
     .modal-close-button:hover,
     .modal-close-button:focus-visible {
-      color: var(--text);
-      border-color: var(--border);
-      background: var(--field-bg);
+      color: #fff;
+      border-color: var(--accent);
+      background: var(--accent);
       opacity: 1;
     }
     .modal-close-button:focus-visible {
