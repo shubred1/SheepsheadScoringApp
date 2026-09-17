@@ -323,6 +323,7 @@
 
   function initGame() {
     loadState();
+    shouldScrollRecentHistoryToBottom = hasSavedGame();
     updateStandings();
     if (shouldShowCompatibilityNotice) {
       document.getElementById("compatibilityModal").hidden = false;
