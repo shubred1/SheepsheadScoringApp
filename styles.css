@@ -386,7 +386,7 @@
       margin: 0;
       padding: 0;
       background: var(--accent);
-      color: #fff;
+      color: var(--button-text);
       border: 1px solid var(--accent);
       border-radius: 50%;
       font-size: 1.15rem;
@@ -395,7 +395,7 @@
     }
     .modal-close-button:hover,
     .modal-close-button:focus-visible {
-      color: #fff;
+      color: var(--button-text);
       border-color: var(--accent);
       background: var(--accent);
       opacity: 1;
