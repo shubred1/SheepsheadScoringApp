@@ -143,6 +143,7 @@
 <div class="modal-backdrop" id="settingsModal" hidden>
   <form class="modal" onsubmit="saveModal(event)">
     <h2 id="modalTitle">New Game</h2>
+    <button class="modal-close-button" type="button" onclick="closeModal()" aria-label="Close">X</button>
     <div class="modal-game-name-field">
       <label>Game Name</label>
       <input id="modalGameName" type="text" />
@@ -177,7 +178,7 @@
         No trick partner doesn't lose
       </label>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" id="modalActions">
       <button class="btn-secondary" id="modalCancelButton" type="button" onclick="closeModal()">Cancel</button>
       <button type="submit" id="modalSubmitButton">Save</button>
     </div>
@@ -187,10 +188,10 @@
 <div class="modal-backdrop" id="gamesModal" hidden>
   <div class="modal">
     <h2>Games</h2>
+    <button class="modal-close-button" type="button" onclick="closeGamesModal()" aria-label="Close">X</button>
     <div class="games-list" id="gamesList"></div>
-    <div class="modal-actions">
+    <div class="modal-actions single-action">
       <button class="btn-secondary" type="button" onclick="openNewGameFromGames()">+ New Game</button>
-      <button type="button" onclick="closeGamesModal()">Done</button>
     </div>
   </div>
 </div>
@@ -211,6 +212,7 @@
 <div class="modal-backdrop" id="preferencesModal" hidden>
   <div class="modal">
     <h2>Preferences</h2>
+    <button class="modal-close-button" type="button" onclick="closePreferencesModal()" aria-label="Close">X</button>
     <label class="preference-primary-label">Theme</label>
     <label class="theme-toggle-label">
       <span id="themeToggleText">Dark mode</span>
@@ -232,24 +234,19 @@
       <button class="preference-segment" type="button" data-tablet-history-position="left" onclick="setTabletLandscapeHistoryPosition('left')">Left</button>
       <button class="preference-segment" type="button" data-tablet-history-position="right" onclick="setTabletLandscapeHistoryPosition('right')">Right</button>
     </div>
-    <div class="modal-actions single-action">
-      <button type="button" onclick="closePreferencesModal()">Done</button>
-    </div>
   </div>
 </div>
 
 <div class="modal-backdrop" id="aboutModal" hidden>
   <div class="modal">
     <h2>About</h2>
+    <button class="modal-close-button" type="button" onclick="closeAboutModal()" aria-label="Close">X</button>
     <div class="about-content">
       <p><strong>Sheepshead Scorekeeper</strong></p>
       <p>Version <span id="appVersion"></span></p>
       <p>A local-first scorekeeper for 3-, 4-, and 5-handed Sheepshead games.</p>
       <p>Scores, player names, settings, and theme preference are saved on this device in this browser.</p>
       <p>The app can be installed and used offline after it has loaded once while online.</p>
-    </div>
-    <div class="modal-actions single-action">
-      <button type="button" onclick="closeAboutModal()">Done</button>
     </div>
   </div>
 </div>

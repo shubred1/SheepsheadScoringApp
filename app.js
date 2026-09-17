@@ -410,6 +410,7 @@
     document.getElementById("modalTitle").textContent = "New Game";
     document.getElementById("modalSubmitButton").textContent = "Start Game";
     document.getElementById("modalCancelButton").hidden = firstGameRequired;
+    document.getElementById("modalActions").classList.remove("single-action");
     modalDefaultGameName = defaultGameName();
     const gameNameInput = document.getElementById("modalGameName");
     gameNameInput.value = "";
@@ -434,7 +435,8 @@
     closeMenu();
     document.getElementById("modalTitle").textContent = "Game Settings";
     document.getElementById("modalSubmitButton").textContent = "Save";
-    document.getElementById("modalCancelButton").hidden = false;
+    document.getElementById("modalCancelButton").hidden = true;
+    document.getElementById("modalActions").classList.add("single-action");
     const gameNameInput = document.getElementById("modalGameName");
     gameNameInput.value = displayGameName(state);
     gameNameInput.placeholder = "";
