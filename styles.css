@@ -1185,3 +1185,8 @@
       margin: 14px 0 8px;
       font-weight: bold;
     }
+    .preference-primary-label {
+      margin: 14px 0 8px;
+      font-size: 0.95rem;
+      font-weight: bold;
+    }

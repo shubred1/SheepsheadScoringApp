@@ -201,19 +201,7 @@
 <div class="modal-backdrop" id="preferencesModal" hidden>
   <div class="modal">
     <h2>Preferences</h2>
-    <label class="edit-section-label">Hand History Position</label>
-    <div class="preference-segmented-control" role="group" aria-label="Hand History Position">
-      <button class="preference-segment" type="button" data-history-position="auto" onclick="setHistoryPosition('auto')">Auto</button>
-      <button class="preference-segment" type="button" data-history-position="top" onclick="setHistoryPosition('top')">Top</button>
-      <button class="preference-segment" type="button" data-history-position="bottom" onclick="setHistoryPosition('bottom')">Bottom</button>
-    </div>
-    <label class="edit-section-label">Tablet Landscape</label>
-    <div class="preference-segmented-control" role="group" aria-label="Tablet Landscape History Position">
-      <button class="preference-segment" type="button" data-tablet-history-position="auto" onclick="setTabletLandscapeHistoryPosition('auto')">Auto</button>
-      <button class="preference-segment" type="button" data-tablet-history-position="left" onclick="setTabletLandscapeHistoryPosition('left')">Left</button>
-      <button class="preference-segment" type="button" data-tablet-history-position="right" onclick="setTabletLandscapeHistoryPosition('right')">Right</button>
-    </div>
-    <label class="edit-section-label">Theme</label>
+    <label class="preference-primary-label">Theme</label>
     <label class="theme-toggle-label">
       <span id="themeToggleText">Dark mode</span>
       <span class="theme-switch">
@@ -221,6 +209,19 @@
         <span class="theme-switch-slider"></span>
       </span>
     </label>
+    <label class="preference-primary-label">Hand History Position</label>
+    <label class="edit-section-label">Portrait Layout</label>
+    <div class="preference-segmented-control" role="group" aria-label="Hand History Position">
+      <button class="preference-segment" type="button" data-history-position="auto" onclick="setHistoryPosition('auto')">Auto</button>
+      <button class="preference-segment" type="button" data-history-position="top" onclick="setHistoryPosition('top')">Top</button>
+      <button class="preference-segment" type="button" data-history-position="bottom" onclick="setHistoryPosition('bottom')">Bottom</button>
+    </div>
+    <label class="edit-section-label">Landscape Layout</label>
+    <div class="preference-segmented-control" role="group" aria-label="Tablet Landscape History Position">
+      <button class="preference-segment" type="button" data-tablet-history-position="auto" onclick="setTabletLandscapeHistoryPosition('auto')">Auto</button>
+      <button class="preference-segment" type="button" data-tablet-history-position="left" onclick="setTabletLandscapeHistoryPosition('left')">Left</button>
+      <button class="preference-segment" type="button" data-tablet-history-position="right" onclick="setTabletLandscapeHistoryPosition('right')">Right</button>
+    </div>
     <div class="modal-actions single-action">
       <button type="button" onclick="closePreferencesModal()">Done</button>
     </div>
