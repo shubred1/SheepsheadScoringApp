@@ -118,6 +118,7 @@
 
 <div class="container app-view full-history-view" id="fullHistoryView" hidden>
   <div class="full-history-topbar">
+    <button class="full-history-close-button" type="button" onclick="closeFullHistoryView()" aria-label="Close">X</button>
     <div class="history-title">
       <label style="margin-bottom: 0; font-weight: bold;">Hand History</label>
       <div class="instruction-text history-helper">Tap a hand number to edit the result.</div>
@@ -134,9 +135,6 @@
       </thead>
       <tbody id="fullTableBody"></tbody>
     </table>
-  </div>
-  <div class="full-history-done-bar">
-    <button type="button" onclick="closeFullHistoryView()">Done</button>
   </div>
 </div>
 
