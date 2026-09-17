@@ -93,7 +93,17 @@
       <div class="history-title">
         <label style="margin-bottom: 0; font-weight: bold;">Recent History</label>
       </div>
-      <button class="btn-secondary compact-link-button" type="button" onclick="openFullHistoryView()">View/Edit Full History</button>
+      <div class="history-header-actions">
+        <button
+          class="btn-secondary recent-history-mode-toggle is-totals"
+          id="recentHistoryScoreModeButton"
+          type="button"
+          onclick="toggleRecentHistoryScoreMode()"
+          aria-pressed="true"
+          aria-label="Recent History showing totals. Switch to hands"
+        >Totals</button>
+        <button class="btn-secondary compact-link-button" type="button" onclick="openFullHistoryView()">Edit History</button>
+      </div>
     </div>
     <div class="table-wrapper recent-history-table-wrapper">
       <table>

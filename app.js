@@ -13,6 +13,7 @@
   let pendingDeleteGameId = null;
   let currentView = "main";
   let shouldScrollRecentHistoryToBottom = false;
+  let recentHistoryShowTotals = true;
   let shouldShowCompatibilityNotice = false;
   let shouldOpenNewGameOnFirstRun = false;
 
@@ -1337,6 +1338,11 @@
     updateStandings();
   }
 
+  function toggleRecentHistoryScoreMode() {
+    recentHistoryShowTotals = !recentHistoryShowTotals;
+    updateStandings();
+  }
+
   function updateRoleInstruction() {
     const instruction = document.getElementById("roleInstruction");
     const activePlayerCount = state.playerCount - fixedSatIds().length;
@@ -1884,7 +1890,7 @@
       bodyId: "recentTableBody",
       players,
       newestFirst: false,
-      showTotals: true,
+      showTotals: recentHistoryShowTotals,
       editable: false,
       showHandNumber: false,
       highlightNewest: true
@@ -1910,6 +1916,16 @@
 
     const historyScoreModeButton = document.getElementById("historyScoreModeButton");
     historyScoreModeButton.textContent = state.historyShowTotals ? "Show Hands" : "Show Totals";
+    const recentHistoryScoreModeButton = document.getElementById("recentHistoryScoreModeButton");
+    recentHistoryScoreModeButton.textContent = recentHistoryShowTotals ? "Totals" : "Hands";
+    recentHistoryScoreModeButton.classList.toggle("is-totals", recentHistoryShowTotals);
+    recentHistoryScoreModeButton.setAttribute("aria-pressed", String(recentHistoryShowTotals));
+    recentHistoryScoreModeButton.setAttribute(
+      "aria-label",
+      recentHistoryShowTotals
+        ? "Recent History showing totals. Switch to hands"
+        : "Recent History showing hands. Switch to totals"
+    );
     const historyOrderButton = document.getElementById("historyOrderButton");
     historyOrderButton.textContent = state.historyNewestFirst ? "Newest First" : "Oldest First";
 
