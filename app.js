@@ -12,7 +12,7 @@
   let editHandDraft = null;
   let pendingDeleteGameId = null;
   let currentView = "main";
-  let shouldScrollRecentHistoryToTop = false;
+  let shouldScrollRecentHistoryToBottom = false;
   let shouldShowCompatibilityNotice = false;
   let shouldOpenNewGameOnFirstRun = false;
 
@@ -1690,7 +1690,7 @@
     document.getElementById("outcomeSelect").selectedIndex = 0;
     document.getElementById("multiplierSelect").selectedIndex = 0;
     state.updatedAt = nowIso();
-    shouldScrollRecentHistoryToTop = true;
+    shouldScrollRecentHistoryToBottom = true;
     saveState();
     updateStandings();
   }
@@ -1882,19 +1882,19 @@
       headerId: "recentTableHeader",
       bodyId: "recentTableBody",
       players,
-      newestFirst: true,
+      newestFirst: false,
       showTotals: true,
       editable: false,
       showHandNumber: false,
       highlightNewest: true
     });
 
-    if (shouldScrollRecentHistoryToTop) {
+    if (shouldScrollRecentHistoryToBottom) {
       const recentHistoryTable = document.querySelector(".recent-history-table-wrapper");
       if (recentHistoryTable) {
-        recentHistoryTable.scrollTop = 0;
+        recentHistoryTable.scrollTop = recentHistoryTable.scrollHeight;
       }
-      shouldScrollRecentHistoryToTop = false;
+      shouldScrollRecentHistoryToBottom = false;
     }
 
     renderHistoryTable({
