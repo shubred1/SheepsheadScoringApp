@@ -632,10 +632,10 @@
   function outcomeOptionLabel(outcome, roles, selectedSatIds) {
     const names = {
       win: "Win - Standard",
-      schneider: "Win - Schneider",
+      schneider: "Win - No Schneider",
       schwarz: "Win - No Tricks",
       loss: state.doubleOnBump ? "Loss - Double Bump" : "Loss - Bump",
-      "schneider-loss": "Loss - Schneidered",
+      "schneider-loss": "Loss - No Schneider",
       "schwarz-loss": "Loss - No Tricks",
       leaster: "Leaster",
       moster: "Moster"
@@ -1704,8 +1704,8 @@
 
   function renderHandDetailBadges(hand) {
     const outcomeBadges = {
-      schneider: { label: "NS", result: "win", description: "Schneider win" },
-      "schneider-loss": { label: "NS", result: "loss", description: "Schneider loss" },
+      schneider: { label: "NS", result: "win", description: "No Schneider win" },
+      "schneider-loss": { label: "NS", result: "loss", description: "No Schneider loss" },
       schwarz: { label: "NT", result: "win", description: "No Tricks / Schwarz win" },
       "schwarz-loss": { label: "NT", result: "loss", description: "No Tricks / Schwarz loss" },
       leaster: { label: "L", result: "leaster", description: "Leaster" },
