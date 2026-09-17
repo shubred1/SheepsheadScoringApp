@@ -140,7 +140,7 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="settingsModal" hidden>
+<div class="modal-backdrop" id="settingsModal" data-dismiss-on-backdrop hidden>
   <form class="modal" onsubmit="saveModal(event)">
     <h2 id="modalTitle">New Game</h2>
     <button class="modal-close-button" type="button" onclick="closeModal()" aria-label="Close">X</button>
@@ -185,7 +185,7 @@
   </form>
 </div>
 
-<div class="modal-backdrop" id="gamesModal" hidden>
+<div class="modal-backdrop" id="gamesModal" data-dismiss-on-backdrop hidden>
   <div class="modal">
     <h2>Games</h2>
     <button class="modal-close-button" type="button" onclick="closeGamesModal()" aria-label="Close">X</button>
@@ -209,7 +209,7 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="preferencesModal" hidden>
+<div class="modal-backdrop" id="preferencesModal" data-dismiss-on-backdrop hidden>
   <div class="modal">
     <h2>Preferences</h2>
     <button class="modal-close-button" type="button" onclick="closePreferencesModal()" aria-label="Close">X</button>
@@ -237,7 +237,7 @@
   </div>
 </div>
 
-<div class="modal-backdrop" id="aboutModal" hidden>
+<div class="modal-backdrop" id="aboutModal" data-dismiss-on-backdrop hidden>
   <div class="modal">
     <h2>About</h2>
     <button class="modal-close-button" type="button" onclick="closeAboutModal()" aria-label="Close">X</button>

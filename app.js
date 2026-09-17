@@ -363,6 +363,38 @@
     }
   });
 
+  const dismissibleModalClosers = {
+    settingsModal: closeModal,
+    gamesModal: closeGamesModal,
+    preferencesModal: closePreferencesModal,
+    aboutModal: closeAboutModal
+  };
+
+  function closeDismissibleModal(id) {
+    const close = dismissibleModalClosers[id];
+    if (close) close();
+  }
+
+  document.addEventListener("pointerdown", event => {
+    const backdrop = event.target;
+    if (backdrop instanceof HTMLElement &&
+        backdrop.matches(".modal-backdrop[data-dismiss-on-backdrop]") &&
+        !backdrop.hidden) {
+      closeDismissibleModal(backdrop.id);
+    }
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
+    for (const id of Object.keys(dismissibleModalClosers)) {
+      const modal = document.getElementById(id);
+      if (modal && !modal.hidden) {
+        closeDismissibleModal(id);
+        return;
+      }
+    }
+  });
+
   function showAppView(view) {
     currentView = view;
     document.getElementById("mainView").hidden = view !== "main";
