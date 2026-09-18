@@ -1171,6 +1171,12 @@
         display: grid;
         gap: 5px;
       }
+      .tablet-multiplier-options .tablet-segmented-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .tablet-multiplier-options .tablet-segment-button:first-child {
+        grid-column: 1 / -1;
+      }
       button.tablet-segment-button {
         width: 100%;
         min-height: 31px;
