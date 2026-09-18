@@ -440,18 +440,41 @@
     .doubler-summary strong {
       color: var(--text);
     }
-    #doublerStartModeField {
+    .doubler-current-actions {
+      margin-top: 42px;
+    }
+    .doubler-current-actions button {
+      margin-top: 0;
+    }
+    #doublersModal.has-active-schedule .doubler-start-section {
+      margin-top: 28px;
+    }
+    .doubler-count-field,
+    .doubler-when-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .doubler-count-field label,
+    .doubler-when-field > label {
+      flex: 0 0 auto;
+      margin-bottom: 0;
+    }
+    .doubler-count-field input {
+      width: auto;
+      min-width: 0;
+      flex: 1 1 0;
+    }
+    .doubler-when-field {
       margin-top: 14px;
     }
-    #doublerStartModeField .preference-segmented-control {
+    .doubler-when-field .preference-segmented-control {
+      flex: 1 1 0;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       margin-bottom: 0;
     }
-    .doubler-modal-actions {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    #doublersModal:not(.has-active-schedule) .doubler-modal-actions {
-      grid-template-columns: 1fr;
+    .doubler-start-actions {
+      margin-top: 48px;
     }
     .modal-game-name-field {
       margin-bottom: 12px;

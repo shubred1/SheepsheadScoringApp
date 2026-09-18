@@ -532,8 +532,9 @@
     countInput.value = String(state.playerCount - fixedSatIds().length);
     countInput.setCustomValidity("");
     document.getElementById("doublerSummary").hidden = !active;
+    document.getElementById("doublerCurrentActions").hidden = !active;
+    document.getElementById("doublerStartHeading").hidden = !active;
     document.getElementById("doublerStartModeField").hidden = !active;
-    document.getElementById("endDoublerRoundButton").hidden = !active;
     document.getElementById("startDoublerRoundButton").textContent = active ? "Start Round" : "Start";
     if (active) {
       document.getElementById("doublerSummaryCurrent").textContent =
@@ -586,6 +587,7 @@
 
   function confirmEndDoublerRound() {
     state.doublerSchedule = [];
+    document.getElementById("multiplierSelect").value = "1";
     state.updatedAt = nowIso();
     closeEndDoublerRoundModal();
     saveState();
@@ -871,10 +873,18 @@
 
   function updateDoublerStatus() {
     const status = document.getElementById("doublerStatus");
-    const remaining = state.doublerSchedule.length;
+    const schedule = state.doublerSchedule;
+    const remaining = schedule.length;
+    const laterHigherSegment = schedule.slice(1).findIndex(layers => layers > schedule[0]);
+    const higherStart = laterHigherSegment === -1 ? -1 : laterHigherSegment + 1;
+    const higherLayers = higherStart === -1 ? null : schedule[higherStart];
+    const higherHands = higherStart === -1 ? 0 : schedule
+      .slice(higherStart)
+      .findIndex(layers => layers !== higherLayers);
+    const higherCount = higherHands === -1 ? remaining - higherStart : higherHands;
     status.hidden = remaining === 0;
     status.textContent = remaining
-      ? `Round of Doublers · ${currentDoublerBase() > 2 ? `${currentDoublerBase()}x · ` : ""}${remaining} ${remaining === 1 ? "hand" : "hands"} remaining`
+      ? `Doublers: ${remaining} ${remaining === 1 ? "hand" : "hands"} remaining${higherStart !== -1 ? ` · ${higherCount} more at ${2 ** higherLayers}x` : ""}`
       : "";
     document.getElementById("mainView").classList.toggle("has-doublers", remaining > 0);
   }
