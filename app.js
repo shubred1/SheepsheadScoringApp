@@ -533,6 +533,7 @@
     countInput.setCustomValidity("");
     document.getElementById("doublerSummary").hidden = !active;
     document.getElementById("doublerCurrentActions").hidden = !active;
+    document.getElementById("doublerSectionDivider").hidden = !active;
     document.getElementById("doublerStartHeading").hidden = !active;
     document.getElementById("doublerStartModeField").hidden = !active;
     document.getElementById("startDoublerRoundButton").textContent = active ? "Start Round" : "Start";
