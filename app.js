@@ -871,11 +871,11 @@
     const selectedSatIds = satIds();
     const eligibleIds = activePlayerIds().filter(id => !selectedSatIds.includes(id) && !fixedSatIds().includes(id));
 
-    if (isSinglePlayerOutcome(outcome) || !eligibleIds.includes(pickerId)) {
+    if (!eligibleIds.includes(pickerId)) {
       return {};
     }
 
-    const partnerId = hasPartnerRole() && eligibleIds.includes(state.roles.partnerId)
+    const partnerId = !isSinglePlayerOutcome(outcome) && hasPartnerRole() && eligibleIds.includes(state.roles.partnerId)
       ? state.roles.partnerId
       : null;
 
@@ -1938,7 +1938,6 @@
 
     const previewDeltas = currentHandPreviewDeltas();
     const nextPreviewBadgeValues = new Map();
-    const singlePlayerOutcome = isSinglePlayerOutcome(currentOutcome());
 
     // Render Standings Grid
     const totalsGrid = document.getElementById("totalsGrid");
@@ -1949,11 +1948,8 @@
       const playerId = playerIdAt(i);
       const val = totals[playerId] || 0;
       const cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
-      const isPreviewRole = !singlePlayerOutcome && (
-        state.roles.pickerId === playerId || state.roles.partnerId === playerId
-      );
-      const previewValue = isPreviewRole ? previewDeltas[playerId] || 0 : 0;
-      const showPreview = isPreviewRole && previewValue !== 0;
+      const previewValue = previewDeltas[playerId] || 0;
+      const showPreview = !isSatOut(i) && !isFixedSat(i) && previewValue !== 0;
       const previewChanged = showPreview && previousPreviewBadgeValues.get(playerId) !== previewValue;
       if (showPreview) {
         nextPreviewBadgeValues.set(playerId, previewValue);

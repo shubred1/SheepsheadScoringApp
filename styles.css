@@ -777,20 +777,22 @@
       margin-top: 2px;
     }
     .total-score-row {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
       min-height: 1.5rem;
     }
     .score-preview-badge {
+      position: absolute;
+      left: calc(50% + 20px);
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 34px;
-      min-width: 34px;
+      width: 30px;
+      min-width: 30px;
       min-height: 20px;
-      padding: 2px 3px;
+      padding: 2px 1px;
       box-sizing: border-box;
       border-radius: 999px;
       font-size: 0.7rem;
@@ -815,7 +817,7 @@
       color: #fff;
     }
     .score-preview-badge.is-pop {
-      animation: score-preview-pop 240ms ease-out;
+      animation: score-preview-pop 480ms ease-out;
     }
     @keyframes score-preview-pop {
       0% { opacity: 0.2; transform: scale(0.92); }
