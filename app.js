@@ -866,6 +866,10 @@
   }
 
   function currentHandPreviewDeltas() {
+    if (!isHandReadyToSubmit()) {
+      return {};
+    }
+
     const outcome = currentOutcome();
     const pickerId = state.roles.pickerId;
     const selectedSatIds = satIds();
