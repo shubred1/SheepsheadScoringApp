@@ -15,9 +15,9 @@ Sitting-player count is `playerCount - handed`. Fixed Skip players stay sitting;
 
 Outcomes stored in each hand are `win`, `schneider`, `schwarz`, `loss`, `schneider-loss`, `schwarz-loss`, `leaster`, and `moster`. The normal per-hand multiplier control offers 1, 2, 4, 8, 16, 32, or 64. Overlapping doubler layers can produce a higher effective multiplier, which multiplies the final base values.
 
-## Round of Doublers (Stage 1)
+## Round of Doublers (Stages 1-2)
 
-Each game has a schedule of doubling-layer counts for upcoming hands. The current base is `2 ^ first entry`, or `1x` when the schedule is empty. **Start Now** adds a layer to each of the next N entries, extending the schedule; **Add to End** appends N entries with one layer each. The current hand's effective multiplier is the greater of its selected multiplier and the doubler base. A successful submission consumes the first entry and stores the effective multiplier in hand history. Undo restores the schedule snapshot saved on that hand. Editing a hand preserves its original doubler minimum without changing the current schedule. There is no user-facing round control yet.
+Each game has a schedule of doubling-layer counts for upcoming hands. The current base is `2 ^ first entry`, or `1x` when the schedule is empty. The menu modal defaults its editable hand count to players currently in rotation, excluding fixed Sitting players. **Start Now** adds a layer to each of the next N entries, extending the schedule; **Add to End** appends N entries with one layer each. Ending a round clears only its upcoming schedule after confirmation. The current hand's effective multiplier is the greater of its selected multiplier and the doubler base; multiplier choices below the base are disabled. Score Hand shows the active round and remaining hands, including the current base when above 2x. A successful submission consumes the first entry and stores the effective multiplier in hand history. Undo restores the schedule snapshot saved on that hand. Editing a hand preserves its original doubler minimum without changing the current schedule. Stage 3 edge-case polish and regression testing remain.
 
 ## Standard outcomes
 

@@ -15,6 +15,8 @@
       --shadow: rgba(0, 0, 0, 0.35);
       --modal-shadow: rgba(0, 0, 0, 0.45);
       --button-text: #000;
+      --doubler-gold: #f5c94d;
+      --doubler-text: #1b2428;
     }
     :root[data-theme="light"] {
       --bg: #f4f7f6;
@@ -33,6 +35,8 @@
       --shadow: rgba(38, 50, 56, 0.18);
       --modal-shadow: rgba(38, 50, 56, 0.28);
       --button-text: #fff;
+      --doubler-gold: #e9ba36;
+      --doubler-text: #1b2428;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -424,6 +428,29 @@
       margin-top: 0;
     }
     .modal-actions.single-action {
+      grid-template-columns: 1fr;
+    }
+    .doubler-summary {
+      display: grid;
+      gap: 4px;
+      margin-bottom: 14px;
+      color: var(--subtext);
+      font-size: 0.9rem;
+    }
+    .doubler-summary strong {
+      color: var(--text);
+    }
+    #doublerStartModeField {
+      margin-top: 14px;
+    }
+    #doublerStartModeField .preference-segmented-control {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-bottom: 0;
+    }
+    .doubler-modal-actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    #doublersModal:not(.has-active-schedule) .doubler-modal-actions {
       grid-template-columns: 1fr;
     }
     .modal-game-name-field {
@@ -940,6 +967,20 @@
       color: var(--subtext);
       margin-bottom: 10px;
     }
+    .doubler-status {
+      width: fit-content;
+      max-width: 100%;
+      box-sizing: border-box;
+      margin: 0 auto 8px;
+      padding: 4px 8px;
+      border: 1px solid var(--doubler-gold);
+      border-radius: 4px;
+      background: var(--doubler-gold);
+      color: var(--doubler-text);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-align: center;
+    }
     .history-header {
       display: flex;
       align-items: flex-start;
@@ -1208,6 +1249,15 @@
         background: var(--accent);
         border-color: var(--accent);
         color: var(--button-text);
+      }
+      #mainView.has-doublers .tablet-multiplier-options button.tablet-segment-button.is-selected {
+        background: var(--doubler-gold);
+        border-color: var(--doubler-gold);
+        color: var(--doubler-text);
+      }
+      #mainView .tablet-multiplier-options button.tablet-segment-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.4;
       }
       #mainView .submit-hand-button {
         grid-area: submit;

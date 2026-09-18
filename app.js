@@ -381,6 +381,8 @@
   const dismissibleModalClosers = {
     settingsModal: closeModal,
     gamesModal: closeGamesModal,
+    doublersModal: closeDoublersModal,
+    endDoublerRoundModal: closeEndDoublerRoundModal,
     preferencesModal: closePreferencesModal,
     aboutModal: closeAboutModal,
     undoModal: closeUndoModal
@@ -517,6 +519,77 @@
   function openNewGameFromGames() {
     closeGamesModal();
     openNewGameModal();
+  }
+
+  let doublerStartMode = "now";
+
+  function openDoublersModal() {
+    closeMenu();
+    const schedule = state.doublerSchedule;
+    const active = schedule.length > 0;
+    document.getElementById("doublersModal").classList.toggle("has-active-schedule", active);
+    const countInput = document.getElementById("doublerHandCount");
+    countInput.value = String(state.playerCount - fixedSatIds().length);
+    countInput.setCustomValidity("");
+    document.getElementById("doublerSummary").hidden = !active;
+    document.getElementById("doublerStartModeField").hidden = !active;
+    document.getElementById("endDoublerRoundButton").hidden = !active;
+    document.getElementById("startDoublerRoundButton").textContent = active ? "Start Round" : "Start";
+    if (active) {
+      document.getElementById("doublerSummaryCurrent").textContent =
+        `${schedule.length} ${schedule.length === 1 ? "hand" : "hands"} remaining · ${currentDoublerBase()}x minimum now`;
+      document.getElementById("doublerSummaryUpcoming").textContent = upcomingDoublerSummary(schedule);
+    }
+    setDoublerStartMode("now");
+    document.getElementById("doublersModal").hidden = false;
+  }
+
+  function closeDoublersModal() {
+    document.getElementById("doublersModal").hidden = true;
+  }
+
+  function setDoublerStartMode(mode) {
+    doublerStartMode = mode;
+    document.querySelectorAll("[data-doubler-start-mode]").forEach(button => {
+      const selected = button.dataset.doublerStartMode === mode;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", String(selected));
+    });
+  }
+
+  function submitDoublerRound(event) {
+    event.preventDefault();
+    const input = document.getElementById("doublerHandCount");
+    const count = Number(input.value);
+    input.setCustomValidity("");
+    if (!input.checkValidity() || !Number.isSafeInteger(count) || count < 1) {
+      input.setCustomValidity("Enter a positive whole number of hands.");
+      input.reportValidity();
+      return;
+    }
+    if (state.doublerSchedule.length && doublerStartMode === "end") {
+      addDoublerRoundToEnd(count);
+    } else {
+      startDoublerRoundNow(count);
+    }
+    closeDoublersModal();
+  }
+
+  function openEndDoublerRoundModal() {
+    closeDoublersModal();
+    document.getElementById("endDoublerRoundModal").hidden = false;
+  }
+
+  function closeEndDoublerRoundModal() {
+    document.getElementById("endDoublerRoundModal").hidden = true;
+  }
+
+  function confirmEndDoublerRound() {
+    state.doublerSchedule = [];
+    state.updatedAt = nowIso();
+    closeEndDoublerRoundModal();
+    saveState();
+    updateStandings();
   }
 
   function openPreferencesModal() {
@@ -783,24 +856,48 @@
     return doublerBaseForSchedule(state.doublerSchedule);
   }
 
+  function upcomingDoublerSummary(schedule) {
+    const groups = [];
+    schedule.forEach(layers => {
+      const last = groups[groups.length - 1];
+      if (last && last.layers === layers) last.hands++;
+      else groups.push({ layers, hands: 1 });
+    });
+    const parts = groups.slice(0, 3).map(group =>
+      `${group.hands} ${group.hands === 1 ? "hand" : "hands"} at ${2 ** group.layers}x`
+    );
+    return `Upcoming: ${parts.join(", then ")}${groups.length > 3 ? ", then more" : ""}.`;
+  }
+
+  function updateDoublerStatus() {
+    const status = document.getElementById("doublerStatus");
+    const remaining = state.doublerSchedule.length;
+    status.hidden = remaining === 0;
+    status.textContent = remaining
+      ? `Round of Doublers · ${currentDoublerBase() > 2 ? `${currentDoublerBase()}x · ` : ""}${remaining} ${remaining === 1 ? "hand" : "hands"} remaining`
+      : "";
+    document.getElementById("mainView").classList.toggle("has-doublers", remaining > 0);
+  }
+
   function effectiveCurrentMultiplier() {
     return Math.max(Number(document.getElementById("multiplierSelect").value) || 1, currentDoublerBase());
   }
 
   function syncCurrentMultiplierToDoublerBase() {
     const select = document.getElementById("multiplierSelect");
-    const generated = select.querySelector("option[data-doubler-generated]");
     const base = currentDoublerBase();
-    if (generated && Number(generated.value) !== base) {
-      if (select.value === generated.value) select.selectedIndex = 0;
-      generated.remove();
-    }
+    select.querySelectorAll("option[data-doubler-generated]").forEach(option => {
+      if (Number(option.value) !== base && !(option.selected && Number(option.value) > base)) option.remove();
+    });
     if (!Array.from(select.options).some(option => Number(option.value) === base)) {
       const option = new Option(`${base}x`, String(base));
       option.dataset.doublerGenerated = "";
       select.add(option);
     }
     if (Number(select.value) < base) select.value = String(base);
+    Array.from(select.options).forEach(option => {
+      option.disabled = Number(option.value) < base;
+    });
   }
 
   function validateDoublerHandCount(count) {
@@ -1991,6 +2088,7 @@
 
   function updateStandings() {
     syncCurrentMultiplierToDoublerBase();
+    updateDoublerStatus();
     updateOutcomeOptions();
     renderTabletHandControls();
     const count = state.playerCount;
