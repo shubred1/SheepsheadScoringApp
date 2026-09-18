@@ -145,7 +145,7 @@
     <h2 id="modalTitle">New Game</h2>
     <button class="modal-close-button" type="button" onclick="closeModal()" aria-label="Close">X</button>
     <div class="modal-game-name-field">
-      <label>Game Name</label>
+      <label id="modalGameNameLabel">Game Name</label>
       <input id="modalGameName" type="text" />
     </div>
     <div id="modalGameTypeField">
@@ -165,7 +165,7 @@
         </div>
       </div>
     </div>
-    <div class="modal-help-text" id="playerReorderHelp" hidden>Drag and drop players to re-order where they are sitting</div>
+    <div class="modal-help-text" id="playerReorderHelp" hidden>Drag and drop players to arrange the seating order</div>
     <div class="modal-player-list" id="modalPlayerNameInputs"></div>
     <button class="btn-secondary add-player-button" id="addPlayerButton" type="button" onclick="addModalPlayer()" hidden>+ Add Player</button>
     <div class="modal-rule-settings" id="modalRuleSettings" hidden>

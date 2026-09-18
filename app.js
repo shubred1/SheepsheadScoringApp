@@ -452,6 +452,8 @@
     closeMenu();
     const firstGameRequired = !hasSavedGame();
     document.getElementById("modalTitle").textContent = "New Game";
+    document.getElementById("settingsModal").classList.remove("game-settings-mode");
+    document.getElementById("modalGameNameLabel").textContent = "Game Name";
     document.getElementById("modalSubmitButton").textContent = "Start Game";
     document.getElementById("modalCancelButton").hidden = firstGameRequired;
     document.getElementById("modalActions").classList.remove("single-action");
@@ -478,6 +480,8 @@
     modalMode = "settings";
     closeMenu();
     document.getElementById("modalTitle").textContent = "Game Settings";
+    document.getElementById("settingsModal").classList.add("game-settings-mode");
+    document.getElementById("modalGameNameLabel").textContent = "Game Name:";
     document.getElementById("modalSubmitButton").textContent = "Save";
     document.getElementById("modalCancelButton").hidden = true;
     document.getElementById("modalActions").classList.add("single-action");
