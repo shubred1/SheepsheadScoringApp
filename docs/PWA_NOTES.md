@@ -8,4 +8,6 @@ Do not bump `version.js` for each development edit. Before preparing a release t
 
 Game data lives in browser localStorage, so it is specific to that browser and device. Installation/offline use is not cloud sync. Clearing browser/site data can remove saved games. Normal app or service-worker updates should not clear localStorage; only the application's incompatible storage-version recovery path replaces it.
 
+The app tracks the usable viewport in `--app-viewport-height`, using `visualViewport.height` when available and `innerHeight` otherwise. It refreshes at startup, on resize/orientation changes, and after the first layout frames so an installed Android app that reloads after a service-worker update does not retain a stale viewport height.
+
 Native packaging or Capacitor is not currently required. Keep the existing GitHub Pages path assumptions intact unless deployment is intentionally redesigned.

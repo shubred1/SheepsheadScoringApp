@@ -2229,6 +2229,31 @@
     updateSubmitButton();
   }
 
+  function updateViewportHeight() {
+    const height = window.visualViewport?.height ?? window.innerHeight;
+    if (!Number.isFinite(height) || height <= 0) return;
+    document.documentElement.style.setProperty("--app-viewport-height", `${Math.round(height)}px`);
+  }
+
+  function refreshViewportHeightAfterLayout() {
+    updateViewportHeight();
+    requestAnimationFrame(() => {
+      updateViewportHeight();
+      requestAnimationFrame(updateViewportHeight);
+    });
+  }
+
+  function setupViewportHeightUpdates() {
+    updateViewportHeight();
+    window.addEventListener("resize", updateViewportHeight);
+    window.addEventListener("orientationchange", refreshViewportHeightAfterLayout);
+    window.visualViewport?.addEventListener("resize", refreshViewportHeightAfterLayout);
+    refreshViewportHeightAfterLayout();
+  }
+
+  // Standalone Android can report a stale dynamic viewport until after the first paint.
+  setupViewportHeightUpdates();
+
   // Initial setup
   initGame();
 
