@@ -8,6 +8,7 @@ Current features:
 - Multiple independent saved games, with an active-game name below the header and a Games modal for switching or deleting games.
 - Player naming, seating-order reordering, supported player additions, and Skip/sit rotation.
 - Current-hand roles, configurable rule settings, Leaster, Moster, multipliers, scoring history, Edit Hand, and Undo Last Hand.
+- Round of Doublers: configurable upcoming-hand multiplier layers with overlap, append, active status, multiplier floors, exact Undo restoration, and browser-local persistence.
 - Hand History supports oldest/newest ordering, hand/totals views, role highlighting, and a compact `★` details column with outcome/multiplier badges.
 - Browser-local persistence and installable/offline PWA support.
 

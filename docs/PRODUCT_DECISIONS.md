@@ -15,10 +15,10 @@ These are durable product choices; planned decisions are included when they guid
 - First run, and the state after the last game is deleted, opens a mandatory New Game modal.
 - The app favors local-first browser use: no account, sync, or server-side game state is required.
 
-## Round of Doublers (Stages 1-2)
+## Round of Doublers
 
-- The game stores upcoming hands' doubler layer counts. **Start Now** adds a layer to the next N hands; **Add to End** appends N one-layer hands. The feature is generic, not tied only to a 60-point loss.
+- The game stores upcoming hands' doubler layer counts. **Now** adds a layer to the next N hands; **End** appends N one-layer hands. The feature is generic, not tied only to a 60-point loss.
 - The current doubler base is `2 ^ layer count`. The effective hand multiplier is the greater of the selected per-hand multiplier and that base; a higher hand multiplier is retained rather than multiplied by the base.
 - Submitting consumes one schedule entry and saves a pre-submit schedule snapshot for exact Undo restoration. Edit Hand does not change the current schedule. Older games default to an empty schedule without a data-version reset.
-- The menu opens a Round of Doublers modal. The editable hand count defaults to players in rotation (excluding fixed Sitting players). An active schedule can be overlapped with **Start Now**, extended with **Add to End**, or deliberately cleared through confirmation; clearing also returns the in-progress multiplier selection to 1x.
-- Score Hand shows active doubler hands remaining and, when a later schedule segment has a higher base, that upcoming segment's count and multiplier. Multiplier choices below the base are disabled; tablet selected-multiplier styling turns gold while a round is active. History uses the existing effective multiplier badges; no separate star indicator is planned. Stage 3 will cover edge-case polish and regression testing.
+- The menu opens a Round of Doublers modal. The editable hand count defaults to players in rotation (excluding fixed Sitting players). An active schedule can be overlapped with **Now**, extended with **End**, or deliberately cleared through confirmation; clearing also returns the in-progress multiplier selection to 1x.
+- Score Hand shows active doubler hands remaining and, when a later schedule segment has a higher base, that upcoming segment's count and multiplier. Multiplier choices below the base are disabled; tablet selected-multiplier styling turns gold while a round is active. History uses the existing effective multiplier badges; no separate star indicator is planned.
