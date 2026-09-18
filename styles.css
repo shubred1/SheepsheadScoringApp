@@ -522,7 +522,7 @@
     }
     .modal-player-list .modal-player-row {
       display: block;
-      padding: 4px 5px;
+      padding: 3px 4px;
       border: 1px solid var(--border);
       border-radius: 6px;
       background: var(--field-bg);
@@ -530,25 +530,11 @@
     .modal-player-list .modal-player-row.dragging {
       opacity: 0.65;
     }
-    .modal-player-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 2px;
-    }
     .modal-player-main {
       display: flex;
       align-items: center;
       gap: 5px;
       flex-wrap: nowrap;
-    }
-    .modal-player-label-text {
-      display: block;
-      margin-bottom: 0;
-      font-size: 0.75rem;
-      color: var(--subtext);
-      font-weight: bold;
     }
     .modal-player-name {
       flex: 1 1 150px;
@@ -574,8 +560,10 @@
     .modal-player-list .sit-checkbox-label {
       flex: 0 0 auto;
       min-height: 20px;
-      padding: 0 2px;
-      font-size: 0.82rem;
+      gap: 4px;
+      padding: 0 1px;
+      font-size: 0.78rem;
+      white-space: nowrap;
     }
     .add-player-button {
       margin-top: 8px;

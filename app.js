@@ -1049,21 +1049,6 @@
       div.addEventListener("drop", handleModalDrop);
       const val = player.name || "";
       div.innerHTML = modalMode === "settings" ? `
-        <div class="modal-player-top">
-          <span class="modal-player-label-text">Player ${i + 1}</span>
-          ${modalMode === "settings" ? `
-            <label class="sit-checkbox-label">
-              <input 
-                class="modal-fixed-sat"
-                type="checkbox"
-                value="${escapeAttribute(player.id)}"
-                onchange="updateModalSitCheckboxes()"
-                ${fixed.includes(player.id) ? "checked" : ""}
-              />
-              Sit indefinitely
-            </label>
-          ` : ""}
-        </div>
         <div class="modal-player-main">
           <button
             class="reorder-handle"
@@ -1075,9 +1060,19 @@
           <input 
             class="modal-player-name"
             type="text" 
-            placeholder="Player ${i + 1}" 
+            placeholder="Player name"
             value="${escapeAttribute(val)}" 
           />
+          <label class="sit-checkbox-label">
+            <input
+              class="modal-fixed-sat"
+              type="checkbox"
+              value="${escapeAttribute(player.id)}"
+              onchange="updateModalSitCheckboxes()"
+              ${fixed.includes(player.id) ? "checked" : ""}
+            />
+            Sitting
+          </label>
         </div>
       ` : `
         <label>Player ${i + 1}</label>
@@ -1156,11 +1151,9 @@
 
   function updateModalPlayerLabels() {
     document.querySelectorAll(".modal-player-row").forEach((row, index) => {
-      const label = row.querySelector(".modal-player-label-text");
       const input = row.querySelector(".modal-player-name");
       const handle = row.querySelector(".reorder-handle");
-      if (label) label.textContent = `Player ${index + 1}`;
-      if (input) input.placeholder = `Player ${index + 1}`;
+      if (input) input.placeholder = modalMode === "settings" ? "Player name" : `Player ${index + 1}`;
       if (handle) handle.setAttribute("aria-label", `Drag to reorder Player ${index + 1}`);
     });
   }
