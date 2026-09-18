@@ -22,6 +22,7 @@ At the top level:
 - `doubleOnBump`, `noTrickPartnerDoesntLose`
 - `roles`: `{ pickerId, partnerId, satIds }` for the in-progress hand
 - `history`: `Hand[]`
+- `doublerSchedule`: upcoming hands' doubling-layer counts, e.g. `[2, 2, 1]`; missing values in older games normalize to `[]`
 - `historyNewestFirst` and `historyShowTotals`
 
 A `Player` is `{ id, name }`. IDs are generated with a `player-` prefix and remain stable when the array is reordered. The active players are the first `playerCount` entries; the app retains up to eight player records for future additions.
@@ -39,6 +40,8 @@ A `Hand` is stored as:
   deltas: { [playerId]: number }
 }
 ```
+
+Hands that consume a doubler schedule entry also store `doublerScheduleBefore`, a copy of the complete schedule immediately before submission. Their `multiplier` is the effective multiplier used for scoring. Undo restores this snapshot. Older hands have no such field and remain valid.
 
 `pickerId` is also the selected player for Leaster (`outcome: "leaster"`) and Moster (`outcome: "moster"`); `partnerId` is `null` for both. `satIds` records the players sitting for that hand. `deltas` is keyed by stable player ID, not player-array index. This is why reorder must not rewrite history and why totals remain historically correct after seating changes.
 

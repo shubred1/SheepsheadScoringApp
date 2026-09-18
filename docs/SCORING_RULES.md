@@ -13,7 +13,11 @@ This document describes the app's implemented scoring, not generic Sheepshead ru
 
 Sitting-player count is `playerCount - handed`. Fixed Skip players stay sitting; other sitters rotate after a submitted hand. Sitting players receive no hand delta. In picker-only modes, tapping another eligible player moves the picker in Cut Throat; the normal selection state also supports filling missing sit slots. Partner-capable modes use the normal picker/optional-partner interaction.
 
-Outcomes stored in each hand are `win`, `schneider`, `schwarz`, `loss`, `schneider-loss`, `schwarz-loss`, `leaster`, and `moster`. Multipliers are 1, 2, 4, 8, 16, 32, or 64 and multiply the final base values.
+Outcomes stored in each hand are `win`, `schneider`, `schwarz`, `loss`, `schneider-loss`, `schwarz-loss`, `leaster`, and `moster`. The normal per-hand multiplier control offers 1, 2, 4, 8, 16, 32, or 64. Overlapping doubler layers can produce a higher effective multiplier, which multiplies the final base values.
+
+## Round of Doublers (Stage 1)
+
+Each game has a schedule of doubling-layer counts for upcoming hands. The current base is `2 ^ first entry`, or `1x` when the schedule is empty. **Start Now** adds a layer to each of the next N entries, extending the schedule; **Add to End** appends N entries with one layer each. The current hand's effective multiplier is the greater of its selected multiplier and the doubler base. A successful submission consumes the first entry and stores the effective multiplier in hand history. Undo restores the schedule snapshot saved on that hand. Editing a hand preserves its original doubler minimum without changing the current schedule. There is no user-facing round control yet.
 
 ## Standard outcomes
 
@@ -54,6 +58,6 @@ The `★` Hand History column uses stored `outcome` and `multiplier`, not inferr
 - `NT`: No Tricks / Schwarz (green when picker won, red when picker lost)
 - `L`: Leaster (purple)
 - `M`: Moster (purple)
-- `2x`, `4x`, `8x`, `16x`, `32x`, or `64x`: neutral multiplier badge
+- `2x`, `4x`, `8x`, and higher: neutral effective multiplier badge
 
 An outcome badge and multiplier badge stack in one compact cell. Standard 1× hands have no result badge.

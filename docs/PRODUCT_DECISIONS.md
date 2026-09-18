@@ -15,8 +15,9 @@ These are durable product choices; planned decisions are included when they guid
 - First run, and the state after the last game is deleted, opens a mandatory New Game modal.
 - The app favors local-first browser use: no account, sync, or server-side game state is required.
 
-## Planned: Round of Doublers
+## Round of Doublers (Stage 1 model)
 
-- Round of Doublers will be a generic manual feature. The user chooses the number of upcoming hands, with an editable default that may be based on players currently in rotation.
-- Starting during an active round either stacks immediately (**Start Now**) or appends after it (**Add to End**); hand-specific multipliers stack as well.
-- Active doublers and hands remaining will be shown on the scoring screen. History will use existing effective multiplier badges, with no separate star indicator planned. The normal multiplier control remains per-hand, while doubler effects apply automatically.
+- The game stores upcoming hands' doubler layer counts. **Start Now** adds a layer to the next N hands; **Add to End** appends N one-layer hands. The feature is generic, not tied only to a 60-point loss.
+- The current doubler base is `2 ^ layer count`. The effective hand multiplier is the greater of the selected per-hand multiplier and that base; a higher hand multiplier is retained rather than multiplied by the base.
+- Submitting consumes one schedule entry and saves a pre-submit schedule snapshot for exact Undo restoration. Edit Hand does not change the current schedule. Older games default to an empty schedule without a data-version reset.
+- The round controls and scoring-screen status are still planned. The hand count will be editable, potentially defaulting to players currently in rotation. History uses the existing effective multiplier badges; no separate star indicator is planned.

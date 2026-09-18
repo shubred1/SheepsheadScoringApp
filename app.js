@@ -183,6 +183,7 @@
       noTrickPartnerDoesntLose: true,
       roles: { pickerId: null, partnerId: null, satIds: [] },
       history: [],
+      doublerSchedule: [],
       historyNewestFirst: true,
       historyShowTotals: true,
       ...overrides
@@ -261,6 +262,9 @@
     state.roles.partnerId = activePlayerIds().includes(state.roles.partnerId) ? state.roles.partnerId : null;
     state.roles.satIds = Array.isArray(state.roles.satIds) ? state.roles.satIds : [];
     state.history = Array.isArray(state.history) ? state.history : [];
+    state.doublerSchedule = Array.isArray(state.doublerSchedule) &&
+      state.doublerSchedule.every(layers => Number.isSafeInteger(layers) && layers >= 0)
+      ? state.doublerSchedule : [];
     state.historyNewestFirst = state.historyNewestFirst !== false;
     state.historyShowTotals = state.historyShowTotals !== false;
     state.fixedSatIds = Array.isArray(state.fixedSatIds) ? state.fixedSatIds : [];
@@ -584,7 +588,10 @@
       return;
     }
 
-    state.history.pop();
+    const hand = state.history.pop();
+    if (Array.isArray(hand.doublerScheduleBefore)) {
+      state.doublerSchedule = hand.doublerScheduleBefore.slice();
+    }
     state.updatedAt = nowIso();
     closeUndoModal();
     saveState();
@@ -768,6 +775,61 @@
     renderTabletHandControlSegments("multiplierSelect", "tabletMultiplierSegments");
   }
 
+  function doublerBaseForSchedule(schedule) {
+    return 2 ** (schedule?.[0] || 0);
+  }
+
+  function currentDoublerBase() {
+    return doublerBaseForSchedule(state.doublerSchedule);
+  }
+
+  function effectiveCurrentMultiplier() {
+    return Math.max(Number(document.getElementById("multiplierSelect").value) || 1, currentDoublerBase());
+  }
+
+  function syncCurrentMultiplierToDoublerBase() {
+    const select = document.getElementById("multiplierSelect");
+    const generated = select.querySelector("option[data-doubler-generated]");
+    const base = currentDoublerBase();
+    if (generated && Number(generated.value) !== base) {
+      if (select.value === generated.value) select.selectedIndex = 0;
+      generated.remove();
+    }
+    if (!Array.from(select.options).some(option => Number(option.value) === base)) {
+      const option = new Option(`${base}x`, String(base));
+      option.dataset.doublerGenerated = "";
+      select.add(option);
+    }
+    if (Number(select.value) < base) select.value = String(base);
+  }
+
+  function validateDoublerHandCount(count) {
+    if (!Number.isSafeInteger(count) || count < 1) {
+      throw new RangeError("Doubler hand count must be a positive integer");
+    }
+  }
+
+  function startDoublerRoundNow(count) {
+    validateDoublerHandCount(count);
+    const schedule = state.doublerSchedule;
+    for (let index = 0; index < count; index++) {
+      schedule[index] = (schedule[index] || 0) + 1;
+    }
+    state.updatedAt = nowIso();
+    saveState();
+    updateStandings();
+  }
+
+  function addDoublerRoundToEnd(count) {
+    validateDoublerHandCount(count);
+    for (let index = 0; index < count; index++) {
+      state.doublerSchedule.push(1);
+    }
+    state.updatedAt = nowIso();
+    saveState();
+    updateStandings();
+  }
+
   function selectTabletHandControlValue(selectId, value) {
     const select = document.getElementById(selectId);
     if (!select || select.value === value) return;
@@ -892,7 +954,7 @@
       partner: partnerId,
       sats: selectedSatIds,
       outcome,
-      multiplier: parseInt(document.getElementById("multiplierSelect").value),
+      multiplier: effectiveCurrentMultiplier(),
       gameSettings: state
     });
   }
@@ -1566,7 +1628,14 @@
     document.getElementById("editHandTitle").textContent = `Edit Hand #${historyIndex + 1}`;
     document.getElementById("editOutcomeSelect").innerHTML = document.getElementById("outcomeSelect").innerHTML;
     document.getElementById("editOutcomeSelect").value = editHandDraft.outcome;
-    document.getElementById("editMultiplierSelect").value = String(editHandDraft.multiplier);
+    const editMultiplierSelect = document.getElementById("editMultiplierSelect");
+    editMultiplierSelect.querySelector("option[data-doubler-generated]")?.remove();
+    if (!Array.from(editMultiplierSelect.options).some(option => Number(option.value) === editHandDraft.multiplier)) {
+      const option = new Option(`${editHandDraft.multiplier}x`, String(editHandDraft.multiplier));
+      option.dataset.doublerGenerated = "";
+      editMultiplierSelect.add(option);
+    }
+    editMultiplierSelect.value = String(editHandDraft.multiplier);
     renderEditHandPlayers();
     document.getElementById("editHandModal").hidden = false;
   }
@@ -1727,7 +1796,10 @@
 
     const hand = state.history[editHandIndex];
     const outcome = document.getElementById("editOutcomeSelect").value;
-    const multiplier = parseInt(document.getElementById("editMultiplierSelect").value);
+    const multiplier = Math.max(
+      parseInt(document.getElementById("editMultiplierSelect").value),
+      doublerBaseForSchedule(hand.doublerScheduleBefore)
+    );
     const partnerId = !isSinglePlayerOutcome(outcome) && hasPartnerRole() && editHandDraft.partnerId !== null ? editHandDraft.partnerId : null;
     const satIdsForHand = editHandDraft.satIds.slice();
     const deltas = calculateHand({
@@ -1764,7 +1836,7 @@
     const currentSatIds = satIds();
 
     const outcome = document.getElementById("outcomeSelect").value;
-    const mult = parseInt(document.getElementById("multiplierSelect").value);
+    const mult = effectiveCurrentMultiplier();
     const effectivePartnerId = !isSinglePlayerOutcome(outcome) && hasPartnerRole() && partnerId !== null ? partnerId : null;
     const deltas = calculateHand({
       picker: pickerId,
@@ -1775,6 +1847,7 @@
       gameSettings: state
     });
 
+    const doublerScheduleBefore = state.doublerSchedule.length ? state.doublerSchedule.slice() : null;
     state.history.push({
       id: createId("hand"),
       deltas,
@@ -1782,8 +1855,11 @@
       partnerId: effectivePartnerId,
       satIds: currentSatIds,
       outcome,
-      multiplier: mult
+      multiplier: mult,
+      ...(doublerScheduleBefore ? { doublerScheduleBefore } : {})
     });
+
+    if (state.doublerSchedule.length) state.doublerSchedule.shift();
 
     // Rotate sitting player clockwise for the next hand
     resetRoles();
@@ -1914,6 +1990,7 @@
   }
 
   function updateStandings() {
+    syncCurrentMultiplierToDoublerBase();
     updateOutcomeOptions();
     renderTabletHandControls();
     const count = state.playerCount;
