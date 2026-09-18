@@ -14,6 +14,7 @@
   let currentView = "main";
   let shouldScrollRecentHistoryToNewest = false;
   let recentHistoryShowTotals = true;
+  let previousPreviewBadgeValues = new Map();
   let shouldShowCompatibilityNotice = false;
   let shouldOpenNewGameOnFirstRun = false;
 
@@ -770,7 +771,7 @@
     if (selectId === "outcomeSelect") {
       handleOutcomeChange();
     } else {
-      renderTabletHandControls();
+      handleMultiplierChange();
     }
   }
 
@@ -862,6 +863,30 @@
     }
 
     return deltas;
+  }
+
+  function currentHandPreviewDeltas() {
+    const outcome = currentOutcome();
+    const pickerId = state.roles.pickerId;
+    const selectedSatIds = satIds();
+    const eligibleIds = activePlayerIds().filter(id => !selectedSatIds.includes(id) && !fixedSatIds().includes(id));
+
+    if (isSinglePlayerOutcome(outcome) || !eligibleIds.includes(pickerId)) {
+      return {};
+    }
+
+    const partnerId = hasPartnerRole() && eligibleIds.includes(state.roles.partnerId)
+      ? state.roles.partnerId
+      : null;
+
+    return calculateHand({
+      picker: pickerId,
+      partner: partnerId,
+      sats: selectedSatIds,
+      outcome,
+      multiplier: parseInt(document.getElementById("multiplierSelect").value),
+      gameSettings: state
+    });
   }
 
   function escapeAttribute(value) {
@@ -1443,6 +1468,10 @@
     updateStandings();
   }
 
+  function handleMultiplierChange() {
+    updateStandings();
+  }
+
   function handleCardTap(index) {
     if (isFixedSat(index)) {
       return;
@@ -1907,6 +1936,10 @@
       });
     });
 
+    const previewDeltas = currentHandPreviewDeltas();
+    const nextPreviewBadgeValues = new Map();
+    const singlePlayerOutcome = isSinglePlayerOutcome(currentOutcome());
+
     // Render Standings Grid
     const totalsGrid = document.getElementById("totalsGrid");
     totalsGrid.style.setProperty("--mobile-player-columns", Math.ceil(count / 2));
@@ -1916,6 +1949,18 @@
       const playerId = playerIdAt(i);
       const val = totals[playerId] || 0;
       const cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
+      const isPreviewRole = !singlePlayerOutcome && (
+        state.roles.pickerId === playerId || state.roles.partnerId === playerId
+      );
+      const previewValue = isPreviewRole ? previewDeltas[playerId] || 0 : 0;
+      const showPreview = isPreviewRole && previewValue !== 0;
+      const previewChanged = showPreview && previousPreviewBadgeValues.get(playerId) !== previewValue;
+      if (showPreview) {
+        nextPreviewBadgeValues.set(playerId, previewValue);
+      }
+      const previewHtml = `
+        <span class="score-preview-badge ${previewValue > 0 ? "preview-positive" : "preview-negative"} ${showPreview ? "is-visible" : ""} ${previewChanged ? "is-pop" : ""}" aria-hidden="true">${showPreview ? `${previewValue > 0 ? "+" : ""}${previewValue}` : ""}</span>
+      `;
       
       let cardClass = "";
       let badgeHtml = "";
@@ -1941,11 +1986,15 @@
       totalsGrid.innerHTML += `
         <div class="total-card ${cardClass}" onclick="handleCardTap(${i})">
           <div class="total-name">${getDisplayName(i)}</div>
-          <div class="total-score ${cls}">${val > 0 ? '+' : ''}${val}</div>
+          <div class="total-score-row">
+            <div class="total-score ${cls}">${val > 0 ? '+' : ''}${val}</div>
+            ${previewHtml}
+          </div>
           <div class="role-badge-slot">${badgeHtml}</div>
         </div>
       `;
     }
+    previousPreviewBadgeValues = nextPreviewBadgeValues;
 
     // Render History Tables
     renderHistoryTable({

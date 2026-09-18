@@ -776,6 +776,60 @@
       font-weight: bold;
       margin-top: 2px;
     }
+    .total-score-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 1.5rem;
+    }
+    .score-preview-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      min-width: 34px;
+      min-height: 20px;
+      padding: 2px 3px;
+      box-sizing: border-box;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 1;
+      opacity: 0;
+      transform: scale(0.96);
+      visibility: hidden;
+      transition: opacity 0.16s ease, transform 0.16s ease;
+    }
+    .score-preview-badge.is-visible {
+      opacity: 1;
+      transform: scale(1);
+      visibility: visible;
+    }
+    .score-preview-badge.preview-positive {
+      background: var(--accent);
+      color: var(--button-text);
+    }
+    .score-preview-badge.preview-negative {
+      background: var(--danger);
+      color: #fff;
+    }
+    .score-preview-badge.is-pop {
+      animation: score-preview-pop 240ms ease-out;
+    }
+    @keyframes score-preview-pop {
+      0% { opacity: 0.2; transform: scale(0.92); }
+      55% { opacity: 1; transform: scale(1.15); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .score-preview-badge {
+        transition: none;
+      }
+      .score-preview-badge.is-pop {
+        animation: none;
+      }
+    }
     .pos { color: var(--accent); }
     .neg { color: var(--danger); }
 
