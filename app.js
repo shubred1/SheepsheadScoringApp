@@ -532,6 +532,7 @@
     countInput.value = String(state.playerCount - fixedSatIds().length);
     countInput.setCustomValidity("");
     document.getElementById("doublerSummary").hidden = !active;
+    document.getElementById("doublerEndDivider").hidden = !active;
     document.getElementById("doublerCurrentActions").hidden = !active;
     document.getElementById("doublerSectionDivider").hidden = !active;
     document.getElementById("doublerStartHeading").hidden = !active;

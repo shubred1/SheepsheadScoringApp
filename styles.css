@@ -443,10 +443,16 @@
     #doublersModal .modal h2 {
       margin-bottom: 26px;
     }
+    #doublersModal .modal {
+      width: min(100%, 420px);
+    }
+    #doublersModal.has-active-schedule .doubler-summary {
+      margin-bottom: 0;
+    }
     .doubler-current-actions {
       display: flex;
       justify-content: center;
-      margin-top: 42px;
+      margin-top: 0;
     }
     .doubler-current-actions button {
       width: auto;
@@ -487,7 +493,8 @@
     }
     #doublersModal.has-active-schedule .doubler-count-field,
     #doublersModal.has-active-schedule .doubler-when-field {
-      grid-template-columns: max-content minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-columns: max-content 76px 76px;
+      justify-content: start;
     }
     #doublersModal.has-active-schedule .doubler-count-field input {
       grid-column: 3;

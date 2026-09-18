@@ -206,6 +206,7 @@
       <strong id="doublerSummaryCurrent"></strong>
       <span id="doublerSummaryUpcoming"></span>
     </div>
+    <div class="doubler-section-divider" id="doublerEndDivider" hidden></div>
     <div class="doubler-current-actions" id="doublerCurrentActions" hidden>
       <button class="btn-danger" id="endDoublerRoundButton" type="button" onclick="openEndDoublerRoundModal()">End Doublers</button>
     </div>
@@ -217,10 +218,10 @@
         <input id="doublerHandCount" type="number" min="1" step="1" required inputmode="numeric" oninput="this.setCustomValidity('')" />
       </div>
       <div class="doubler-when-field" id="doublerStartModeField" hidden>
-        <label>When:</label>
-        <div class="preference-segmented-control" role="group" aria-label="Round timing">
-          <button class="preference-segment" type="button" data-doubler-start-mode="now" onclick="setDoublerStartMode('now')" aria-pressed="true">Start Now</button>
-          <button class="preference-segment" type="button" data-doubler-start-mode="end" onclick="setDoublerStartMode('end')" aria-pressed="false">Add to End</button>
+        <label>Where to add:</label>
+        <div class="preference-segmented-control" role="group" aria-label="Where to add the round">
+          <button class="preference-segment" type="button" data-doubler-start-mode="now" onclick="setDoublerStartMode('now')" aria-pressed="true">Now</button>
+          <button class="preference-segment" type="button" data-doubler-start-mode="end" onclick="setDoublerStartMode('end')" aria-pressed="false">End</button>
         </div>
       </div>
       <div class="modal-actions single-action doubler-start-actions">
