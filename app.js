@@ -2042,7 +2042,11 @@
     }
 
     players.forEach((_, i) => {
-      th.innerHTML += `<th>${getDisplayName(i)}</th>`;
+      const playerName = getDisplayName(i);
+      const title = headerId === "recentTableHeader"
+        ? ` title="${escapeAttribute(playerName)}"`
+        : "";
+      th.innerHTML += `<th${title}>${playerName}</th>`;
     });
   }
 

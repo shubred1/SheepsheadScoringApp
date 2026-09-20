@@ -1164,15 +1164,18 @@
       overflow: auto;
     }
     .recent-history-table-wrapper table {
-      width: max-content;
+      width: 100%;
       min-width: 100%;
       table-layout: fixed;
     }
     .recent-history-table-wrapper th:not(.history-details-header),
     .recent-history-table-wrapper td:not(.history-details-cell) {
-      width: 32px;
       min-width: 32px;
       white-space: nowrap;
+    }
+    .recent-history-table-wrapper th:not(.history-details-header) {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .recent-history-table-wrapper th {
       position: sticky;
