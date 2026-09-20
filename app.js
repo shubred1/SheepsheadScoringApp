@@ -2035,6 +2035,13 @@
     const th = document.getElementById(headerId);
     if (!th) return;
 
+    if (headerId === "recentTableHeader") {
+      const table = th.closest("table");
+      if (table) {
+        table.style.setProperty("--recent-history-min-width", `${31 + players.length * 68}px`);
+      }
+    }
+
     if (!showHandNumber) {
       th.innerHTML = '<th class="history-details-header" aria-label="Hand details">★</th>';
     } else {
