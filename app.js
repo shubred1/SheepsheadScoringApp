@@ -2038,7 +2038,7 @@
     if (headerId === "recentTableHeader") {
       const table = th.closest("table");
       if (table) {
-        table.style.setProperty("--recent-history-min-width", `${31 + players.length * 68}px`);
+        table.style.setProperty("--recent-history-min-width", `${31 + players.length * 48}px`);
       }
     }
 

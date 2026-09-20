@@ -1177,7 +1177,7 @@
     }
     .recent-history-table-wrapper th:not(.history-details-header),
     .recent-history-table-wrapper td:not(.history-details-cell) {
-      min-width: 68px;
+      min-width: 48px;
       white-space: nowrap;
     }
     .recent-history-table-wrapper th:not(.history-details-header) {
@@ -1188,6 +1188,13 @@
       position: sticky;
       top: 0;
       z-index: 1;
+    }
+    @media (max-width: 699px) {
+      .recent-history-table-wrapper th:not(.history-details-header),
+      .recent-history-table-wrapper td:not(.history-details-cell) {
+        padding-right: 4px;
+        padding-left: 4px;
+      }
     }
     @media (max-width: 699px), (max-height: 480px) {
       #mainView.history-position-auto .history-section {
