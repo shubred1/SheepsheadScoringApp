@@ -2037,7 +2037,7 @@
     const numberColumnWidth = 42;
     const detailsColumnWidth = 31;
     const playerColumnMinWidth = 48;
-    const playerColumnMaxWidth = 96;
+    const playerColumnExceptionThreshold = 96;
     const tableWrapper = table.closest(".full-history-table-wrapper");
     const headerStyle = getComputedStyle(table.querySelector("th"));
     const context = document.createElement("canvas").getContext("2d");
@@ -2053,15 +2053,25 @@
     });
     const availableWidth = tableWrapper?.clientWidth || 0;
     const specialColumnWidth = numberColumnWidth + detailsColumnWidth;
-    const normalColumnWidth = players.length > 0 && availableWidth > 0
-      ? Math.min(
-          playerColumnMaxWidth,
-          Math.max(playerColumnMinWidth, (availableWidth - specialColumnWidth) / players.length)
+    const exceptionalIndexes = new Set(
+      nameWidths
+        .map((width, index) => width > playerColumnExceptionThreshold ? index : null)
+        .filter(index => index !== null)
+    );
+    const exceptionalWidth = nameWidths.reduce(
+      (sum, width, index) => sum + (exceptionalIndexes.has(index) ? width : 0),
+      0
+    );
+    const normalPlayerCount = players.length - exceptionalIndexes.size;
+    const normalColumnWidth = normalPlayerCount > 0 && availableWidth > 0
+      ? Math.max(
+          playerColumnMinWidth,
+          (availableWidth - specialColumnWidth - exceptionalWidth) / normalPlayerCount
         )
       : playerColumnMinWidth;
 
-    const playerColumnWidths = nameWidths.map(width =>
-      width > normalColumnWidth ? width : normalColumnWidth
+    const playerColumnWidths = nameWidths.map((width, index) =>
+      exceptionalIndexes.has(index) ? width : normalColumnWidth
     );
     const tableWidth = specialColumnWidth + playerColumnWidths.reduce((sum, width) => sum + width, 0);
     const colgroup = document.createElement("colgroup");
