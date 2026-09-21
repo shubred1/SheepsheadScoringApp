@@ -2031,6 +2031,45 @@
     });
   }
 
+  function configureFullHistoryColumns(table, players) {
+    const numberColumnWidth = 42;
+    const detailsColumnWidth = 31;
+    const playerColumnMinWidth = 48;
+    const playerColumnNormalMaxWidth = 96;
+    const headerStyle = getComputedStyle(table.querySelector("th"));
+    const context = document.createElement("canvas").getContext("2d");
+
+    if (context) {
+      context.font = headerStyle.font;
+    }
+
+    const nameWidths = players.map((_, index) => {
+      const name = getDisplayName(index);
+      const textWidth = context ? context.measureText(name).width : name.length * 8;
+      return Math.ceil(textWidth) + 18;
+    });
+    const normalNameWidth = Math.min(
+      playerColumnNormalMaxWidth,
+      Math.max(playerColumnMinWidth, ...nameWidths.filter(width => width <= playerColumnNormalMaxWidth))
+    );
+    const playerColumnWidths = nameWidths.map(width =>
+      width > playerColumnNormalMaxWidth ? width : normalNameWidth
+    );
+    const colgroup = document.createElement("colgroup");
+
+    colgroup.innerHTML = [
+      `<col class="full-history-number-column" style="width: ${numberColumnWidth}px">`,
+      `<col class="history-details-column" style="width: ${detailsColumnWidth}px">`,
+      ...playerColumnWidths.map(width => `<col class="history-player-column" style="width: ${width}px">`)
+    ].join("");
+    table.querySelector("colgroup")?.remove();
+    table.insertBefore(colgroup, table.firstChild);
+    table.style.setProperty(
+      "--full-history-min-width",
+      `${numberColumnWidth + detailsColumnWidth + playerColumnWidths.reduce((sum, width) => sum + width, 0)}px`
+    );
+  }
+
   function renderHistoryHeader({ headerId, players, showHandNumber }) {
     const th = document.getElementById(headerId);
     if (!th) return;
@@ -2055,6 +2094,10 @@
         : "";
       th.innerHTML += `<th${title}>${playerName}</th>`;
     });
+
+    if (headerId === "fullTableHeader") {
+      configureFullHistoryColumns(th.closest("table"), players);
+    }
   }
 
   function renderHistoryTable({
