@@ -2037,46 +2037,56 @@
     const numberColumnWidth = 42;
     const detailsColumnWidth = 31;
     const playerColumnMinWidth = 48;
-    const playerColumnExceptionThreshold = 96;
     const tableWrapper = table.closest(".full-history-table-wrapper");
-    const headerStyle = getComputedStyle(table.querySelector("th"));
     const context = document.createElement("canvas").getContext("2d");
-
-    if (context) {
-      context.font = headerStyle.font;
-    }
-
-    const nameWidths = players.map((_, index) => {
+    const playerHeaders = Array.from(table.querySelectorAll("thead th")).slice(2);
+    const playerColumnMinimumWidths = players.map((_, index) => {
       const name = getDisplayName(index);
+      const headerStyle = getComputedStyle(playerHeaders[index]);
+      const horizontalSpace = [
+        headerStyle.paddingLeft,
+        headerStyle.paddingRight,
+        headerStyle.borderLeftWidth,
+        headerStyle.borderRightWidth
+      ].reduce((sum, value) => sum + (parseFloat(value) || 0), 0);
+      if (context) {
+        context.font = headerStyle.font;
+      }
       const textWidth = context ? context.measureText(name).width : name.length * 8;
-      return Math.ceil(textWidth) + 18;
+      return Math.max(playerColumnMinWidth, Math.ceil(textWidth + horizontalSpace + 1));
     });
     const availableWidth = tableWrapper?.clientWidth || 0;
     const specialColumnWidth = numberColumnWidth + detailsColumnWidth;
-    const exceptionalIndexes = new Set(
-      nameWidths
-        .map((width, index) => width > playerColumnExceptionThreshold ? index : null)
-        .filter(index => index !== null)
-    );
-    const exceptionalWidth = nameWidths.reduce(
-      (sum, width, index) => sum + (exceptionalIndexes.has(index) ? width : 0),
-      0
-    );
-    const normalPlayerCount = players.length - exceptionalIndexes.size;
-    const normalColumnMinimumWidth = Math.max(
-      playerColumnMinWidth,
-      ...nameWidths.filter((_, index) => !exceptionalIndexes.has(index))
-    );
-    const normalColumnWidth = normalPlayerCount > 0 && availableWidth > 0
-      ? Math.max(
-          normalColumnMinimumWidth,
-          (availableWidth - specialColumnWidth - exceptionalWidth) / normalPlayerCount
-        )
-      : normalColumnMinimumWidth;
+    const playerColumnWidths = Array(players.length).fill(0);
+    const remainingIndexes = new Set(players.map((_, index) => index));
+    let remainingWidth = Math.max(0, availableWidth - specialColumnWidth);
 
-    const playerColumnWidths = nameWidths.map((width, index) =>
-      exceptionalIndexes.has(index) ? width : normalColumnWidth
-    );
+    while (remainingIndexes.size > 0) {
+      const equalWidth = remainingWidth / remainingIndexes.size;
+      const constrainedIndexes = Array.from(remainingIndexes).filter(
+        index => playerColumnMinimumWidths[index] > equalWidth
+      );
+
+      if (constrainedIndexes.length === 0) {
+        remainingIndexes.forEach(index => {
+          playerColumnWidths[index] = equalWidth;
+        });
+        break;
+      }
+
+      constrainedIndexes.forEach(index => {
+        playerColumnWidths[index] = playerColumnMinimumWidths[index];
+        remainingWidth -= playerColumnMinimumWidths[index];
+        remainingIndexes.delete(index);
+      });
+    }
+
+    if (availableWidth === 0) {
+      playerColumnMinimumWidths.forEach((width, index) => {
+        playerColumnWidths[index] = width;
+      });
+    }
+
     const tableWidth = specialColumnWidth + playerColumnWidths.reduce((sum, width) => sum + width, 0);
     const colgroup = document.createElement("colgroup");
 
@@ -2310,11 +2320,22 @@
     document.documentElement.style.setProperty("--app-viewport-height", `${Math.round(height)}px`);
   }
 
+  function refreshFullHistoryColumns() {
+    if (currentView === "full-history") {
+      configureFullHistoryColumns(document.querySelector(".full-history-table-wrapper table"), activePlayers());
+    }
+  }
+
   function refreshViewportHeightAfterLayout() {
     updateViewportHeight();
+    refreshFullHistoryColumns();
     requestAnimationFrame(() => {
       updateViewportHeight();
-      requestAnimationFrame(updateViewportHeight);
+      refreshFullHistoryColumns();
+      requestAnimationFrame(() => {
+        updateViewportHeight();
+        refreshFullHistoryColumns();
+      });
     });
   }
 
@@ -2322,9 +2343,7 @@
     updateViewportHeight();
     window.addEventListener("resize", () => {
       updateViewportHeight();
-      if (currentView === "full-history") {
-        configureFullHistoryColumns(document.querySelector(".full-history-table-wrapper table"), activePlayers());
-      }
+      refreshFullHistoryColumns();
     });
     window.addEventListener("orientationchange", refreshViewportHeightAfterLayout);
     window.visualViewport?.addEventListener("resize", refreshViewportHeightAfterLayout);
