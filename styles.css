@@ -1047,6 +1047,12 @@
     :root[data-theme="light"] :is(.recent-history-table-wrapper, .full-history-table-wrapper) td.history-moster-cell::after {
       background: color-mix(in srgb, var(--partner-color) 18%, transparent);
     }
+    :root:not([data-theme="light"]) :is(.recent-history-table-wrapper, .full-history-table-wrapper) td.history-picker-cell::after,
+    :root:not([data-theme="light"]) :is(.recent-history-table-wrapper, .full-history-table-wrapper) td.history-partner-cell::after,
+    :root:not([data-theme="light"]) :is(.recent-history-table-wrapper, .full-history-table-wrapper) td.history-leaster-cell::after,
+    :root:not([data-theme="light"]) :is(.recent-history-table-wrapper, .full-history-table-wrapper) td.history-moster-cell::after {
+      background: #263D52;
+    }
     :is(.recent-history-table-wrapper, .full-history-table-wrapper) td.history-picker-cell::after {
       border-radius: 999px;
     }
