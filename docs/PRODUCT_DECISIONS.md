@@ -15,6 +15,13 @@ These are durable product choices; planned decisions are included when they guid
 - First run, and the state after the last game is deleted, opens a mandatory New Game modal.
 - The app favors local-first browser use: no account, sync, or server-side game state is required.
 
+## Full History Table Sizing
+
+- Full History fills at least its available table container. Each player column requires at least 48px or the measured width of that player's complete name plus horizontal cell padding, whichever is greater.
+- Player columns share equal widths whenever the available space permits. When they cannot, columns are assigned their required minimums first and the remaining space is redistributed equally among the other columns. Horizontal scrolling begins only when all required minimums exceed the container width.
+- The hand-number/details columns are independently sized and remain fully visible. Full History uses explicit `colgroup` widths with `table-layout: fixed`; widths are measured from the rendered header font/padding and recalculated when the viewport or player names change so browser auto-sizing cannot override them.
+- Full History never clips, truncates, wraps, or overlaps player names. Recent History intentionally uses separate compact, fixed-width/name-display rules and should not be inferred from Full History sizing.
+
 ## Round of Doublers
 
 - The game stores upcoming hands' doubler layer counts. **Now** adds a layer to the next N hands; **End** appends N one-layer hands. The feature is generic, not tied only to a 60-point loss.
