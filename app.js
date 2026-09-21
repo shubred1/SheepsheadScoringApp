@@ -2063,12 +2063,16 @@
       0
     );
     const normalPlayerCount = players.length - exceptionalIndexes.size;
+    const normalColumnMinimumWidth = Math.max(
+      playerColumnMinWidth,
+      ...nameWidths.filter((_, index) => !exceptionalIndexes.has(index))
+    );
     const normalColumnWidth = normalPlayerCount > 0 && availableWidth > 0
       ? Math.max(
-          playerColumnMinWidth,
+          normalColumnMinimumWidth,
           (availableWidth - specialColumnWidth - exceptionalWidth) / normalPlayerCount
         )
-      : playerColumnMinWidth;
+      : normalColumnMinimumWidth;
 
     const playerColumnWidths = nameWidths.map((width, index) =>
       exceptionalIndexes.has(index) ? width : normalColumnWidth
