@@ -2034,8 +2034,7 @@
   function configureFullHistoryColumns(table, players) {
     const numberColumnWidth = 42;
     const detailsColumnWidth = 31;
-    const playerColumnMinWidth = 48;
-    const playerColumnNormalMaxWidth = 96;
+    const playerColumnWidth = 48;
     const headerStyle = getComputedStyle(table.querySelector("th"));
     const context = document.createElement("canvas").getContext("2d");
 
@@ -2048,13 +2047,7 @@
       const textWidth = context ? context.measureText(name).width : name.length * 8;
       return Math.ceil(textWidth) + 18;
     });
-    const normalNameWidth = Math.min(
-      playerColumnNormalMaxWidth,
-      Math.max(playerColumnMinWidth, ...nameWidths.filter(width => width <= playerColumnNormalMaxWidth))
-    );
-    const playerColumnWidths = nameWidths.map(width =>
-      width > playerColumnNormalMaxWidth ? width : normalNameWidth
-    );
+    const playerColumnWidths = nameWidths.map(width => Math.max(playerColumnWidth, width));
     const colgroup = document.createElement("colgroup");
 
     colgroup.innerHTML = [
