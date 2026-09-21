@@ -1190,7 +1190,7 @@
       z-index: 1;
     }
     .full-history-table-wrapper table {
-      width: 100%;
+      width: var(--full-history-table-width, 100%);
       min-width: var(--full-history-min-width, 100%);
       table-layout: fixed;
     }

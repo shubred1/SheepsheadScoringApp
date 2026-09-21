@@ -2032,9 +2032,13 @@
   }
 
   function configureFullHistoryColumns(table, players) {
+    if (!table) return;
+
     const numberColumnWidth = 42;
     const detailsColumnWidth = 31;
-    const playerColumnWidth = 48;
+    const playerColumnMinWidth = 48;
+    const playerColumnMaxWidth = 96;
+    const tableWrapper = table.closest(".full-history-table-wrapper");
     const headerStyle = getComputedStyle(table.querySelector("th"));
     const context = document.createElement("canvas").getContext("2d");
 
@@ -2047,7 +2051,19 @@
       const textWidth = context ? context.measureText(name).width : name.length * 8;
       return Math.ceil(textWidth) + 18;
     });
-    const playerColumnWidths = nameWidths.map(width => Math.max(playerColumnWidth, width));
+    const availableWidth = tableWrapper?.clientWidth || 0;
+    const specialColumnWidth = numberColumnWidth + detailsColumnWidth;
+    const normalColumnWidth = players.length > 0 && availableWidth > 0
+      ? Math.min(
+          playerColumnMaxWidth,
+          Math.max(playerColumnMinWidth, (availableWidth - specialColumnWidth) / players.length)
+        )
+      : playerColumnMinWidth;
+
+    const playerColumnWidths = nameWidths.map(width =>
+      width > normalColumnWidth ? width : normalColumnWidth
+    );
+    const tableWidth = specialColumnWidth + playerColumnWidths.reduce((sum, width) => sum + width, 0);
     const colgroup = document.createElement("colgroup");
 
     colgroup.innerHTML = [
@@ -2057,10 +2073,8 @@
     ].join("");
     table.querySelector("colgroup")?.remove();
     table.insertBefore(colgroup, table.firstChild);
-    table.style.setProperty(
-      "--full-history-min-width",
-      `${numberColumnWidth + detailsColumnWidth + playerColumnWidths.reduce((sum, width) => sum + width, 0)}px`
-    );
+    table.style.setProperty("--full-history-min-width", `${tableWidth}px`);
+    table.style.setProperty("--full-history-table-width", `${tableWidth}px`);
   }
 
   function renderHistoryHeader({ headerId, players, showHandNumber }) {
@@ -2292,7 +2306,12 @@
 
   function setupViewportHeightUpdates() {
     updateViewportHeight();
-    window.addEventListener("resize", updateViewportHeight);
+    window.addEventListener("resize", () => {
+      updateViewportHeight();
+      if (currentView === "full-history") {
+        configureFullHistoryColumns(document.querySelector(".full-history-table-wrapper table"), activePlayers());
+      }
+    });
     window.addEventListener("orientationchange", refreshViewportHeightAfterLayout);
     window.visualViewport?.addEventListener("resize", refreshViewportHeightAfterLayout);
     refreshViewportHeightAfterLayout();
